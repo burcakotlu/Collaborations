@@ -260,12 +260,15 @@ public class RsIDAugmentation {
 
 		//First Task: Uplift from GRCh37p13 to latest assembly
 		Remap.convertGivenInputCoordinatesFromSourceAssemblytoTargetAssemblyUsingRemap(
-				dataFolder, 		
+				dataFolder, 
+				dataFolder,
 				RareVariants_ChrName_GLANET1BasedCoordinate_GRCh37p13_rsID_InputFileGLANET, 
 				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET, 
 				sourceAssemblyName, 
 				targetAssemblyName,
-				true);
+				true,
+				false,
+				null);
 		
 		//Second Task: Augment with rsID
 		readRareVariantsAugmentWithRsIDs(
@@ -276,12 +279,15 @@ public class RsIDAugmentation {
 
 		//Third Task
 		Remap.convertGivenInputCoordinatesFromSourceAssemblytoTargetAssemblyUsingRemap(
-				dataFolder, 		
+				dataFolder, 
+				dataFolder,
 				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET, 
 				RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET, 
 				latestAssembyNameReturnedByNCBIEutils, 
 				"GRCh37.p13",
-				false);
+				false,
+				false,
+				null);
 		
 		
 	}

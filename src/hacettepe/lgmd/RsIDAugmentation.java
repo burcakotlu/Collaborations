@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hacettepe.musculardystrophy;
+package hacettepe.lgmd;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -21,17 +21,12 @@ import auxiliary.FileOperations;
  * @date Nov 25, 2016
  * @project Collaboration 
  * 
- * This class prepares input file for GLANET
+ * This class prepares input file for GLANET Annotation, Enrichment and Regulatory Sequence Analysis.
+ * This class lasts for two and a half hours.
+ * Keep this in mind.
  *
  */
 public class RsIDAugmentation {
-
-	/**
-	 * 
-	 */
-	public RsIDAugmentation() {
-		// TODO Auto-generated constructor stub
-	}
 
 	
 	public static void readRareVariantsAugmentWithRsIDs(
@@ -106,7 +101,6 @@ public class RsIDAugmentation {
 				rsIdList_plus1 = null;
 				rsIdList_minus1 = null;
 				
-				//Version2
 				rsIdList = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
 					chrNamewithoutPreceedingChr, 
 					_1BasedPosition_LatestAssembly, 
@@ -126,13 +120,13 @@ public class RsIDAugmentation {
 					
 					rsIdList_plus1 = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
 							chrNamewithoutPreceedingChr, 
-							_1BasedPosition_LatestAssembly+1, 
-							_1BasedPosition_LatestAssembly+1);
+							_1BasedPosition_Plus1_LatestAssembly, 
+							_1BasedPosition_Plus1_LatestAssembly);
 					
 					rsIdList_minus1 = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
 							chrNamewithoutPreceedingChr, 
-							_1BasedPosition_LatestAssembly-1, 
-							_1BasedPosition_LatestAssembly-1);
+							_1BasedPosition_Minus1_LatestAssembly, 
+							_1BasedPosition_Minus1_LatestAssembly);
 					
 					if (!rsIdList_plus1.isEmpty()){	
 						rsID_Plus1 ="";
@@ -160,78 +154,19 @@ public class RsIDAugmentation {
 					numberofLinesWithNoRsId++;
 				}
 								
-//				//Version1
-//				if(rsID.equalsIgnoreCase("-")){
-//					
-//					rsIdList = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
-//							chrNamewithoutPreceedingChr, 
-//							_1BasedPosition_LatestAssembly, 
-//							_1BasedPosition_LatestAssembly);					
-//											
-//					if (!rsIdList.isEmpty()){						
-//							for(Iterator<Integer> itr=rsIdList.iterator();itr.hasNext();) {
-//							rsIDInt = itr.next();							
-//							rsID = "rs" + rsIDInt + "\t";
-//						}
-//						
-//						bufferedWriter.write(chrName + "\t" + _1BasedPosition_LatestAssembly + "\t" + rsID + "\t" + "Augmented" +System.getProperty("line.separator"));
-//					}
-//						
-//	
-//					
-//					else if (rsIdList.isEmpty()){
-//						
-//						rsIdList_plus1 = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
-//								chrNamewithoutPreceedingChr, 
-//								_1BasedPosition_LatestAssembly+1, 
-//								_1BasedPosition_LatestAssembly+1);
-//						
-//						rsIdList_minus1 = augmentationOfAGivenIntervalWithRsIDs.getRsIdsInAGivenInterval(
-//								chrNamewithoutPreceedingChr, 
-//								_1BasedPosition_LatestAssembly-1, 
-//								_1BasedPosition_LatestAssembly-1);
-//						
-//						if (!rsIdList_plus1.isEmpty()){						
-//							for(Iterator<Integer> itr=rsIdList_plus1.iterator();itr.hasNext();) {
-//								rsIDInt = itr.next();							
-//								rsID_Plus1 = "rs" + rsIDInt + "\t";
-//							}
-//							
-//							bufferedWriter.write(chrName + "\t" + _1BasedPosition_Plus1_LatestAssembly + "\t" + rsID_Plus1 + "\t" + "Augmented Plus1" + System.getProperty("line.separator"));
-//						}
-//						
-//						if (!rsIdList_minus1.isEmpty()){						
-//							for(Iterator<Integer> itr=rsIdList_minus1.iterator();itr.hasNext();) {
-//								rsIDInt = itr.next();							
-//								rsID_Minus1 = "rs" + rsIDInt + "\t";
-//							}
-//							
-//							bufferedWriter.write(chrName + "\t" + _1BasedPosition_Minus1_LatestAssembly + "\t" + rsID_Minus1 + "\t" + "Augmented Minus1" +System.getProperty("line.separator"));
-//
-//						}
-//		
-//					}//End of if rsIdList is empty
-//					
-//				}else {
-//
-//					bufferedWriter.write(chrName + "\t" + _1BasedPosition_LatestAssembly + "\t" + rsID + "\t" + "Original" + System.getProperty("line.separator"));
-//					
-//				}													
 			
-		}//End of while
+			}//End of while
 			
-		System.out.println("FYI numberofLinesWithNoRsId: " + numberofLinesWithNoRsId);
+			System.out.println("FYI numberofLinesWithNoRsId: " + numberofLinesWithNoRsId);
+				
+			//close
+			bufferedReader.close();
+			bufferedWriter.close();
+	
 			
-		//close
-		bufferedReader.close();
-		bufferedWriter.close();
-
-		
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -240,23 +175,25 @@ public class RsIDAugmentation {
 		
 		String dataFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\";
 		
-		//Given InputFile from eliminating common variants
+		//Read resulting file after eliminating common and synonymous variants
 		String RareVariants_ChrName_GLANET1BasedCoordinate_GRCh37p13_rsID_InputFileGLANET = "RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//After Task1 Uplift
-		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET = "RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
-		//After Task2 Augment
-		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET = "RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
+		//After Task2 Augment with rsID
+		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//After Task3 Downlift
-		String RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET = "RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
 
+		//Auxiliary starts
 		//Get Latest Assembly right now it is GRCh38.p7
 		String latestAssembyNameReturnedByNCBIEutils = NCBIEutils.getLatestAssemblyNameReturnedByNCBIEutils();
 		
 		String sourceAssemblyName = "GRCh37.p13"; 
 		String targetAssemblyName = latestAssembyNameReturnedByNCBIEutils;
+		//Auxiliary ends
 
 		//First Task: Uplift from GRCh37p13 to latest assembly
 		Remap.convertGivenInputCoordinatesFromSourceAssemblytoTargetAssemblyUsingRemap(
@@ -277,7 +214,7 @@ public class RsIDAugmentation {
 				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET);
 		
 
-		//Third Task
+		//Third Task Downlift from latestAssembly to GRCh37p13
 		Remap.convertGivenInputCoordinatesFromSourceAssemblytoTargetAssemblyUsingRemap(
 				dataFolder, 
 				dataFolder,
@@ -288,12 +225,8 @@ public class RsIDAugmentation {
 				false,
 				false,
 				null);
-		
-		
+				
 	}
-	
-	
-	
 	
 	
 	public static void main(String[] args) {

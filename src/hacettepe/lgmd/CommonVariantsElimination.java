@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hacettepe.musculardystrophy;
+package hacettepe.lgmd;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,12 +15,17 @@ import auxiliary.FileOperations;
  * @author Burçak Otlu
  * @date Nov 21, 2016
  * @project Collaboration 
+ * 
+ * LGMD stands for Limb-girdle muscular dystrophy.
+ * LGMD is a term for a group of diseases that cause weakness and wasting of the muscles in the arms and legs.
  *
  */
 public class CommonVariantsElimination {
 
 	
-	public static void readMuscularDystrophyDataFilterWriteFile(float selectionCriteriaForCommonVariant, float selectionCriteriaForRareVariant){
+	public static void readMuscularDystrophyDataFilterWriteFile(
+			float selectionCriteriaForCommonVariant, 
+			float selectionCriteriaForRareVariant){
 		
 		//Input
 		String directoryNameandfileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LGMD-FamB-WES-All_chr_result.tep.txt";
@@ -29,7 +34,6 @@ public class CommonVariantsElimination {
 		String directoryNameandRareVariantsWithAllColumnsfileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_All_Columns_LGMD-FamB-WES-All_chr_result.tep.txt";
 		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_LGMD-FamB-WES-All_chr_result.tep.txt";
 		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
-
 		
 		FileReader fileReader = null;
 		BufferedReader bufferedReader = null;
@@ -226,10 +230,10 @@ public class CommonVariantsElimination {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
 		// Read the musculardystrophy data
 		// Filter the common variants
-		// Write the remaining rare variants
-		
+		// Write the remaining rare variants		
 		float selectionCriteriaForCommonVariant = 0.1f;
 		float selectionCriteriaForRareVariant = 0.01f;
 		readMuscularDystrophyDataFilterWriteFile(selectionCriteriaForCommonVariant,selectionCriteriaForRareVariant);

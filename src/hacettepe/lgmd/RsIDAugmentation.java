@@ -179,14 +179,14 @@ public class RsIDAugmentation {
 		String RareVariants_ChrName_GLANET1BasedCoordinate_GRCh37p13_rsID_InputFileGLANET = "RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//After Task1 Uplift
-		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//After Task2 Augment with rsID
-		String RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateLatestAssembly_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//After Task3 Downlift
 		//This file will be used in GLANET Annotation, Enrichment and RSA runs
-		String RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET = "GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_Augmented_LGMD-FamB-WES-All_chr_result.tep.txt";
 
 		//Auxiliary starts
 		//Get Latest Assembly right now it is GRCh38.p7
@@ -201,7 +201,7 @@ public class RsIDAugmentation {
 				dataFolder, 
 				dataFolder,
 				RareVariants_ChrName_GLANET1BasedCoordinate_GRCh37p13_rsID_InputFileGLANET, 
-				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET, 
+				GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET, 
 				sourceAssemblyName, 
 				targetAssemblyName,
 				true,
@@ -211,15 +211,15 @@ public class RsIDAugmentation {
 		//Second Task: Augment with rsID
 		readRareVariantsAugmentWithRsIDs(
 				dataFolder,
-				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET,
-				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET);
+				GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_InputFileGLANET,
+				GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET);
 		
 		//Third Task Downlift from latestAssembly to GRCh37p13
 		Remap.convertGivenInputCoordinatesFromSourceAssemblytoTargetAssemblyUsingRemap(
 				dataFolder, 
 				dataFolder,
-				RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET, 
-				RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET, 
+				GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_LatestAssembly_rsID_Augmented_InputFileGLANET, 
+				GLANETDataPreparation_RareVariants_ChrName_GLANET1BasedCoordinate_Ch37p13_rsID_Augmented_InputFileGLANET, 
 				latestAssembyNameReturnedByNCBIEutils, 
 				"GRCh37.p13",
 				false,

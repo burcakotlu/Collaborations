@@ -96,7 +96,7 @@ public class LGMDAssociatedGenes {
 				
 				//First gene
 				if (indexofFormerComma>0){
-					gene = genes.substring(0,indexofFormerComma).trim();
+					gene = genes.substring(0,indexofFormerComma).trim().toUpperCase();
 					indexofLatterComma = genes.indexOf(",",indexofFormerComma+1);	
 					
 					if (!LGMDAssociatedGeneSymbolsList.contains(gene)){
@@ -105,7 +105,7 @@ public class LGMDAssociatedGenes {
 					
 				}else{
 					//There is only one gene
-					gene = genes.trim();
+					gene = genes.trim().toUpperCase();
 					if (!LGMDAssociatedGeneSymbolsList.contains(gene)){
 						LGMDAssociatedGeneSymbolsList.add(gene);
 					}
@@ -113,7 +113,7 @@ public class LGMDAssociatedGenes {
 				
 				//Middle gene or genes
 				while(indexofLatterComma>0){
-					gene = genes.substring(indexofFormerComma+1,indexofLatterComma).trim();
+					gene = genes.substring(indexofFormerComma+1,indexofLatterComma).trim().toUpperCase();
 					if (!LGMDAssociatedGeneSymbolsList.contains(gene)){
 						LGMDAssociatedGeneSymbolsList.add(gene);
 					}
@@ -124,7 +124,7 @@ public class LGMDAssociatedGenes {
 				
 				//Last gene
 				if (indexofFormerComma>0){
-					gene = genes.substring(indexofFormerComma+1).trim();
+					gene = genes.substring(indexofFormerComma+1).trim().toUpperCase();
 					if (!LGMDAssociatedGeneSymbolsList.contains(gene)){
 						LGMDAssociatedGeneSymbolsList.add(gene);
 					}
@@ -249,7 +249,7 @@ public class LGMDAssociatedGenes {
 	}
 	
 	
-	public static void readIntervalsAndWriteSNPsInHg38(
+	public static void readIntervalsAndWriteSNPs(
 			String LGMDRelatedGenesFolder,
 			String LGMDRelatedGenesIntervalsFile,
 			String SNPsForLGMDRelatedGenesIntervalsFile){
@@ -348,6 +348,8 @@ public class LGMDAssociatedGenes {
 	public static void generateIntervalsForGivenGeneSymbols(
 			String LGMDRelatedGenesFolder,
 			String LGMDRelatedGenesIntervalsFile,
+			String LGMDRelatedGenesSymbolsThatAreFoundFile,
+			String LGMDRelatedGenesSymbolsThatAreNotFoundFile,
 			List<String> LGMDAssociatedGeneSymbolsList,
 			TObjectIntMap<String> geneSymbol2GeneInternalNumberMap,		
 			TIntObjectMap<HG38RefSeqGeneInformation> geneInternalNumber2GeneInformationMap,
@@ -363,12 +365,26 @@ public class LGMDAssociatedGenes {
 		FileWriter fileWriter = null;
 		BufferedWriter bufferedWriter = null;
 		
+		FileWriter fileWriterGeneSymbolsThatAreFound = null;
+		BufferedWriter bufferedWriterGeneSymbolsThatAreFound = null;
+		
+		FileWriter fileWriterGeneSymbolsThatAreNotFound = null;
+		BufferedWriter bufferedWriterGeneSymbolsThatAreNotFound = null;
+
+
+		
 		int promoterStart = -1;
 		int promoterEnd = -1;
 		
 		try {
 			fileWriter = FileOperations.createFileWriter(LGMDRelatedGenesFolder + LGMDRelatedGenesIntervalsFile);
 			bufferedWriter = new BufferedWriter(fileWriter);
+			
+			fileWriterGeneSymbolsThatAreFound = FileOperations.createFileWriter(LGMDRelatedGenesFolder + LGMDRelatedGenesSymbolsThatAreFoundFile);
+			bufferedWriterGeneSymbolsThatAreFound = new BufferedWriter(fileWriterGeneSymbolsThatAreFound);
+
+			fileWriterGeneSymbolsThatAreNotFound = FileOperations.createFileWriter(LGMDRelatedGenesFolder + LGMDRelatedGenesSymbolsThatAreNotFoundFile);
+			bufferedWriterGeneSymbolsThatAreNotFound = new BufferedWriter(fileWriterGeneSymbolsThatAreNotFound);
 			
 			for(Iterator<String> itr=LGMDAssociatedGeneSymbolsList.iterator();itr.hasNext();){
 				
@@ -377,7 +393,7 @@ public class LGMDAssociatedGenes {
 				geneNumberInternal = geneSymbol2GeneInternalNumberMap.get(geneSymbol);
 				geneInformation = geneInternalNumber2GeneInformationMap.get(geneNumberInternal);
 			
-				
+				//Found
 				if (geneInformation!=null){
 					
 					geneStrand = geneInformation.getStrand();
@@ -394,13 +410,22 @@ public class LGMDAssociatedGenes {
 						promoterStart = geneInformation.getTxEnd()-numberofBasedAfterTSS;						
 					}
 					
+					bufferedWriterGeneSymbolsThatAreFound.write(geneInformation.getGeneSymbol() + System.getProperty("line.separator"));
 					bufferedWriter.write(geneInformation.getChromName().convertEnumtoString() + "\t" + promoterStart + "\t" + promoterEnd + System.getProperty("line.separator"));				
+				}
+				//Not Found
+				else{
+					bufferedWriterGeneSymbolsThatAreNotFound.write(geneSymbol + System.getProperty("line.separator"));
+					
 				}
 							
 			}//End of FOR			
 			
 			//Close
 			bufferedWriter.close();
+			bufferedWriterGeneSymbolsThatAreFound.close();
+			bufferedWriterGeneSymbolsThatAreNotFound.close();
+			
 		
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -432,6 +457,8 @@ public class LGMDAssociatedGenes {
 		List<Integer> LGMDAssociatedGeneIdsList = new ArrayList<Integer>();
 		
 		
+		//LGMD has two forms: Autosomal dominant (LGMD1) and the autosomal recessive forms (LGMD2).
+		
 		//Fill LGMDAssociatedGeneSymbolsList
 		readLGMDAssociatedGenes(OMIMLGMDDirectory,LGMDAssociatedGenesFileName_Burcak_Updated,LGMDAssociatedGeneSymbolsList);
 		
@@ -444,9 +471,27 @@ public class LGMDAssociatedGenes {
 		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"SGCB");
 		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"SGCD");
 		
-		//Pay attention
+		
+		//Manually add genes from https://ghr.nlm.nih.gov/condition/limb-girdle-muscular-dystrophy#genes
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"LMNA");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"CAV3");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"CAPN3");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"DYSF");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"TTN");
+		
+		//Manually added genes from http://www.kegg.jp/dbget-bin/www_bget?ds:H00593
+		//KEGG Pathway Disease Code for LGMD is H00593
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"TTID");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"LMNA");
+		addGeneSymbols(LGMDAssociatedGeneSymbolsList,"CAV3");
+		
+				
+		//Fill LGMDAssociatedGeneIdsList
+		//Pay attention I'm using only gene symbols in the rest of the code.
 		getLGMDAssociatedGenesEntrezIDs(dataFolder,LGMDAssociatedGeneSymbolsList,LGMDAssociatedGeneIdsList);
 		
+		
+		//Just for information has nothing to do with the rest of the code.
 		System.out.println("Number of gene symbols in the list \t" + LGMDAssociatedGeneSymbolsList.size());
 		System.out.println("Number of gene ids in the list \t" + LGMDAssociatedGeneIdsList.size());
 		/*********************************************************************************/
@@ -455,59 +500,68 @@ public class LGMDAssociatedGenes {
 
 		
 		
-		/*********************************************************************************/
-		/*****************Generate Intervals for LGMD related genes***********************/
-		/*********************************************************************************/
-		//Question: where does the TFs bind in genes?
-		//TFs binds close to gene's promoter regions.
-		String UCSC_GENOME_HG38_REFSEQ_GENES_FILE = dataFolder + Commons.UCSCGENOME_HG38_REFSEQ_GENES_DOWNLOADED_2_DEC_2016;
-		TObjectIntMap<String> geneSymbol2GeneInternalNumberMap = new TObjectIntHashMap<String>();		
-		TIntObjectMap<HG38RefSeqGeneInformation> geneInternalNumber2HG38GeneInformationMap = new TIntObjectHashMap<HG38RefSeqGeneInformation>();	
+//		/*********************************************************************************/
+//		/*****************Generate Intervals for LGMD related genes***********************/
+//		/*********************************************************************************/
+//		//Question: where does the TFs bind in genes?
+//		//TFs binds close to gene's promoter regions.
+//		String UCSC_GENOME_HG38_REFSEQ_GENES_FILE = dataFolder + Commons.UCSCGENOME_HG38_REFSEQ_GENES_DOWNLOADED_2_DEC_2016;
+//		TObjectIntMap<String> geneSymbol2GeneInternalNumberMap = new TObjectIntHashMap<String>();		
+//		TIntObjectMap<HG38RefSeqGeneInformation> geneInternalNumber2HG38GeneInformationMap = new TIntObjectHashMap<HG38RefSeqGeneInformation>();	
+//		
+//		//Fill the maps using HG38 RefSeq genes file
+//		//This file only contains geneSymbol and geneRefSeqName. 
+//		//It doesn't contains gene entrez id
+//		//Therefore we have nothing to do with gene entrez id.
+//		HG38_RefSeq_Genes.readUCSCGenomeHG38RefSeqGenes(
+//				UCSC_GENOME_HG38_REFSEQ_GENES_FILE,
+//				geneSymbol2GeneInternalNumberMap,
+//				geneInternalNumber2HG38GeneInformationMap);
+//		
+//		String LGMDRelatedGenesFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\OMIM\\";
+//		//String LGMDRelatedGenesIntervalsFile = "LGMD_Related_Genes_Promoters_1KB_Intervals_In_HG38_Coordinates.txt"; 
+//		String LGMDRelatedGenesIntervalsFile = "LGMD_Related_Genes_Promoter_2KB_Intervals_In_HG38_Coordinates.txt"; 
+//		String LGMDRelatedGenesSymbolsThatAreFoundFile = "LGMD_Related_Genes_Symbols_That_Are_Found.txt"; 
+//		String LGMDRelatedGenesSymbolsThatAreNotFoundFile = "LGMD_Related_Genes_Symbols_That_Are_Not_Found.txt"; 
+//
+//		generateIntervalsForGivenGeneSymbols(
+//				LGMDRelatedGenesFolder,
+//				LGMDRelatedGenesIntervalsFile,
+//				LGMDRelatedGenesSymbolsThatAreFoundFile,
+//				LGMDRelatedGenesSymbolsThatAreNotFoundFile,
+//				LGMDAssociatedGeneSymbolsList,
+//				geneSymbol2GeneInternalNumberMap,
+//				geneInternalNumber2HG38GeneInformationMap,
+//				2000,
+//				200);
+//		/*********************************************************************************/
+//		/*****************Generate Intervals for LGMD related genes***********************/
+//		/*********************************************************************************/
 		
-		HG38_RefSeq_Genes.readUCSCGenomeHG38RefSeqGenes(
-				UCSC_GENOME_HG38_REFSEQ_GENES_FILE,
-				geneSymbol2GeneInternalNumberMap,
-				geneInternalNumber2HG38GeneInformationMap);
-		
-		
-		String LGMDRelatedGenesFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RelatedGenes\\";
-		String LGMDRelatedGenesIntervalsFile = "LGMD_Related_Genes_Promoters_1KB_Intervals_In_HG38_Coordinates.txt"; 
-		//String LGMDRelatedGenesIntervalsFile = "LGMD_Related_Genes_Promoter_2KB_Intervals_In_HG38_Coordinates.txt"; 
-		generateIntervalsForGivenGeneSymbols(
-				LGMDRelatedGenesFolder,
-				LGMDRelatedGenesIntervalsFile,
-				LGMDAssociatedGeneSymbolsList,
-				geneSymbol2GeneInternalNumberMap,
-				geneInternalNumber2HG38GeneInformationMap,
-				1000,
-				200);
-		/*********************************************************************************/
-		/*****************Generate Intervals for LGMD related genes***********************/
-		/*********************************************************************************/
-		
-		/*********************************************************************************/
-		/*****************Find SNPs within provided LGMD related genes intervals**********/
-		/*********************************************************************************/
-		//Read intervals data in hg38
-		//Write SNPs data (their rsIDs)
-		String SNPsForLGMDRelatedGenesIntervalsFile = "SNPs_for_LGMD_Related_Genes_Promoters_1KB_Intervals.txt"; 
-		//String SNPsForLGMDRelatedGenesIntervalsFile = "SNPs_for_LGMD_Related_Genes_Promoter_2KB_Intervals.txt"; 
-		
-		readIntervalsAndWriteSNPsInHg38(
-				LGMDRelatedGenesFolder,
-				LGMDRelatedGenesIntervalsFile,
-				SNPsForLGMDRelatedGenesIntervalsFile);
-		/*********************************************************************************/
-		/*****************Find SNPs within provided LGMD related genes intervals**********/
-		/*********************************************************************************/
+//		/*********************************************************************************/
+//		/*****************Find SNPs within provided LGMD related genes intervals**********/
+//		/*********************************************************************************/
+//		//Read intervals data in hg38
+//		//Write SNPs data (their rsIDs)
+//		//String SNPsForLGMDRelatedGenesIntervalsFile = "SNPs_for_LGMD_Related_Genes_Promoters_1KB_Intervals.txt"; 
+//		String SNPsForLGMDRelatedGenesIntervalsFile = "SNPs_for_LGMD_Related_Genes_Promoter_2KB_Intervals.txt"; 
+//		
+//		readIntervalsAndWriteSNPs(
+//				LGMDRelatedGenesFolder,
+//				LGMDRelatedGenesIntervalsFile,
+//				SNPsForLGMDRelatedGenesIntervalsFile);
+//		/*********************************************************************************/
+//		/*****************Find SNPs within provided LGMD related genes intervals**********/
+//		/*********************************************************************************/
 
 	
 		/*********************************************************************************/
 		/*****************Find common genes***********************************************/
 		/*********************************************************************************/
-		String geneOvelapFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\GeneOverlaps\\";
+		String geneOvelapFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\GLANET_Outputs\\LGMD_ENCODE_GENE_TFKEGG\\Annotation\\Hg19RefSeqGene\\Analysis\\";		
 		String overlapAnalysisFile = "Overlap_Analysis_File.txt"; 
-		String commonLGMDGenes_For_RareLGMDSNPs_GeneAnnotations_File ="commonLGMDGenes_For_RareLGMDSNPs_GeneAnnotations.txt";
+
+		String commonLGMDGenes_For_RareLGMDSNPs_GeneAnnotations_File ="CommonLGMDGenes_For_RareLGMDSNPs_GeneAnnotations.txt";
 		checkAnyCommonGenesBetweenLGMDAssociatedGenesAndGLANETAnalysis(
 				geneOvelapFolder,
 				overlapAnalysisFile,
@@ -520,11 +574,11 @@ public class LGMDAssociatedGenes {
 		
 		
 		/*********************************************************************************/
-		/*****************Find common genes***********************************************/
+		/*****************Find common genes for LGMD given 6085 SNPS**********************/
 		/*********************************************************************************/
-		String postAnalysisRSAFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\PostAnalysisRSA\\";
+		String postAnalysisRSAFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\GLANET_Outputs\\LGMD_SNPs_RSA\\RegulatorySequenceAnalysis\\";		
 		String postAnalysisRSAFile = "PostAnalysisofRegulatorySequenceAnalysisResults_AugmentedWithGeneAnnotations.txt";
-		String commonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA_File ="commonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA.txt";
+		String commonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA_File ="CommonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA.txt";
 		
 		checkAnyCommonGenesBetweenLGMDAssociatedGenesAndGLANETAnalysis(
 				postAnalysisRSAFolder,
@@ -537,6 +591,24 @@ public class LGMDAssociatedGenes {
 		/*********************************************************************************/
 		
 		
+		
+		/*********************************************************************************/
+		/***Find common genes for 619 SNPs in 2KB promoter region of LGMD related genes***/
+		/*********************************************************************************/
+		postAnalysisRSAFolder = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\GLANET_Outputs\\LGMD_Related_Genes_SNPs_IN_2KB_RSA\\RegulatorySequenceAnalysis\\";		
+		postAnalysisRSAFile = "PostAnalysisofRegulatorySequenceAnalysisResults_AugmentedWithGeneAnnotations.txt";
+		commonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA_File ="CommonLGMDGenes_For_SNPs_In_2KB_Promoters_of_LGMDRelatedGenes_PostAnalysisRSA.txt";
+		
+		checkAnyCommonGenesBetweenLGMDAssociatedGenesAndGLANETAnalysis(
+				postAnalysisRSAFolder,
+				postAnalysisRSAFile,
+				commonLGMDGenes_For_RareLGMDSNPs_PostAnalysisRSA_File,
+				LGMDAssociatedGeneSymbolsList,
+				LGMDAssociatedGeneIdsList);
+		/*********************************************************************************/
+		/*****************Find common genes***********************************************/
+		/*********************************************************************************/
+
 
 	}
 

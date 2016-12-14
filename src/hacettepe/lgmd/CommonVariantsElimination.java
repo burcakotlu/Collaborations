@@ -8,7 +8,11 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import enumtypes.ChromosomeName;
 import auxiliary.FileOperations;
 
 /**
@@ -34,6 +38,8 @@ public class CommonVariantsElimination {
 		String directoryNameandRareVariantsWithAllColumnsfileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_All_Columns_LGMD-FamB-WES-All_chr_result.tep.txt";
 		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_LGMD-FamB-WES-All_chr_result.tep.txt";
 		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_father_mother_case_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
+		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID__chr4_related_haplotype_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_chr4_related_haplotype__LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		FileReader fileReader = null;
 		BufferedReader bufferedReader = null;
@@ -46,6 +52,14 @@ public class CommonVariantsElimination {
 		
 		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = null;
 		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = null;
+		
+		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = null;
+		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = null;
+
+		
+		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = null;
+		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = null;
+
 		
 		String strLine = null;
 		
@@ -77,6 +91,9 @@ public class CommonVariantsElimination {
 		int count = 0;
 		
 		String function = null;
+		String Case_13D0201103_mut = null;
+		String Control_13D0201099_mut_father = null;
+		String Control_13D0201100_mut_mother = null;		
 		String rsID = null;
 		
 		float dbSNP_fre = 0f;
@@ -87,6 +104,13 @@ public class CommonVariantsElimination {
 		float Agilent_50M_fre = 0f;
 		float Nimblegen_44M_fre = 0f;
 				
+		
+		Map<String,Integer> functionMap = new HashMap<String,Integer>();
+		int numberofALLSNPS = 0;
+
+		Map<String,Integer> subsetFunctionMap = new HashMap<String,Integer>();
+		int numberofSubSetofSNPS = 0;
+		
 		try {
 			
 			//Input
@@ -103,6 +127,13 @@ public class CommonVariantsElimination {
 			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID_InputFileGLANET);
 			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID);
 
+			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID_InputFileGLANET);
+			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID);
+			
+			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID__chr4_related_haplotype_InputFileGLANET);;
+			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype);
+
+			
 			//Skip header line
 			strLine = bufferedReader.readLine();
 			
@@ -131,18 +162,22 @@ public class CommonVariantsElimination {
 					count++;
 					
 					if (count==1){
-						chrName = strLine.substring(0, indexofTab);
-						indexofFormerTab = indexofTab;
+						chrName = strLine.substring(0, indexofTab);						
 					}else if (count==2){
 						_1BasedPosition= Integer.parseInt(strLine.substring(indexofFormerTab+1, indexofTab));
-						indexofFormerTab = indexofTab;
 					}else if (count==7){
 						function = strLine.substring(indexofFormerTab+1, indexofTab);
-					}else{
-						indexofFormerTab = indexofTab;
+					}else if(count==10){
+						Control_13D0201099_mut_father = strLine.substring(indexofFormerTab+1, indexofTab);
+					}else if(count==12){
+						Control_13D0201100_mut_mother = strLine.substring(indexofFormerTab+1, indexofTab);
+					}else if(count==14){
+						Case_13D0201103_mut = strLine.substring(indexofFormerTab+1, indexofTab);
 					}
 					
+					indexofFormerTab = indexofTab;
 					indexofTab = strLine.indexOf('\t',indexofTab+1);
+					
 				}//End of WHILE
 				
 				indexofSixteenthTab = strLine.indexOf('\t',indexofTab+1);
@@ -155,6 +190,16 @@ public class CommonVariantsElimination {
 				indexofTwentyThirdTab  = strLine.indexOf('\t',indexofTwentySecondTab+1);
 				indexofTwentyFourthTab  = strLine.indexOf('\t',indexofTwentyThirdTab+1);
 				indexofTwentyFifthTab  = strLine.indexOf('\t',indexofTwentyFourthTab+1);
+				
+				//Initialize for each line
+				//If there is "-" then accept frequency as 0.
+				dbSNP_fre = 0f;
+				_1000human_fre = 0f;
+				Hapmap_fre = 0f;
+				Agilent_38M_fre = 0f;
+				Agilent_46M_fre = 0f;
+				Agilent_50M_fre = 0f;
+				Nimblegen_44M_fre = 0f;
 				
 				//dbSNP_fre
 				if (!strLine.substring(indexofTab+1, indexofSixteenthTab).equalsIgnoreCase("-")){
@@ -203,21 +248,69 @@ public class CommonVariantsElimination {
 					
 					//Filter Synonymous SNPs
 					if (!function.startsWith("Synonymous")){
+						
 						bufferedWriter_RareVariants_WithAllColumns.write(strLine + System.getProperty("line.separator")); 
 						bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate.write(chrName +  "\t" + _1BasedPosition + System.getProperty("line.separator"));
-						bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID.write(chrName +  "\t" + _1BasedPosition + "\t" + rsID +   System.getProperty("line.separator"));						
-					}
+						bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID.write(chrName +  "\t" + _1BasedPosition + "\t" + rsID +   System.getProperty("line.separator"));
+	
+						if ( (Case_13D0201103_mut.contains("Hom") || Case_13D0201103_mut.contains("Het")) && Control_13D0201099_mut_father.contains("Het") && Control_13D0201100_mut_mother.contains("Het")  ){
+							bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID.write(chrName +  "\t" + _1BasedPosition + "\t" + Control_13D0201099_mut_father + "\t" + Control_13D0201100_mut_mother + "\t" + Case_13D0201103_mut + "\t" + rsID +   System.getProperty("line.separator"));
+						}
+						
+						if (subsetFunctionMap.get(function)==null){
+							subsetFunctionMap.put(function,1);					
+						}else{
+							subsetFunctionMap.put(function,subsetFunctionMap.get(function)+1);					
+						}
+						
+						
+						if (chrName.equalsIgnoreCase(ChromosomeName.CHROMOSOME4.convertEnumtoString()) && _1BasedPosition < 70325709  &&  _1BasedPosition> 43884368){
+							bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype.write(chrName +  "\t" + _1BasedPosition + "\t" + rsID +  "\t"  + function+ System.getProperty("line.separator"));
+						}//End of if on chr4 haplotype
 					
-				}
+					}//End of if synonmyous SNPs
+					
+				}//End of rare variants
 				
+				
+				if (functionMap.get(function)==null){
+					functionMap.put(function,1);					
+				}else{
+					functionMap.put(function,functionMap.get(function)+1);					
+				}
+					
+					
 				
 			}//End of while reading input file
+			
+			
+			//All SNPs
+			System.out.println("******************************************************************");
+			for(Entry<String, Integer> entry: functionMap.entrySet()){
+				System.out.println(entry.getKey() + "\t" + entry.getValue());
+				numberofALLSNPS += entry.getValue();
+			}
+			System.out.println("Number of all SNPS" + "\t" + numberofALLSNPS);
+			System.out.println("******************************************************************");
+			
+			//Rare not synnonmous SNPs
+			System.out.println("******************************************************************");
+			for(Entry<String, Integer> entry: subsetFunctionMap.entrySet()){
+				System.out.println(entry.getKey() + "\t" + entry.getValue());
+				numberofSubSetofSNPS += entry.getValue();
+			}
+			System.out.println("Number of rare not synnonmous SNPS" + "\t" + numberofSubSetofSNPS);
+			System.out.println("******************************************************************");
+
+			
 			
 			//Close
 			bufferedReader.close();
 			bufferedWriter_RareVariants_WithAllColumns.close();
 			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate.close();
 			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID.close();
+			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype.close();
+			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID.close();
 			
 		} catch (IOException e) {
 			e.printStackTrace();

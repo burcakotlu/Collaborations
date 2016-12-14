@@ -66,6 +66,7 @@ public class RsIDAugmentation {
 		int rsIDInt = -1;
 		
 		int numberofLinesWithNoRsId = 0;
+		int numberofOriginalLinesWithNoRsId = 0;
 		
 		AugmentationofGivenIntervalwithRsIds augmentationOfAGivenIntervalWithRsIDs = null;
 		
@@ -149,15 +150,19 @@ public class RsIDAugmentation {
 					}
 		
 				}//End of if rsIdList is empty
+				
+				if (rsIdList.isEmpty()) {
+					numberofOriginalLinesWithNoRsId++;
+				}
 
 				if (rsIdList.isEmpty() && rsIdList_plus1.isEmpty() && rsIdList_minus1.isEmpty()) {
 					numberofLinesWithNoRsId++;
 				}
 								
-			
 			}//End of while
 			
-			System.out.println("FYI numberofLinesWithNoRsId: " + numberofLinesWithNoRsId);
+			System.out.println("FYI numberofOriginalLinesWithNoRsId: " + numberofOriginalLinesWithNoRsId);
+			System.out.println("FYI numberofLinesWithNoRsId still after plus minus 1: " + numberofLinesWithNoRsId);
 				
 			//close
 			bufferedReader.close();

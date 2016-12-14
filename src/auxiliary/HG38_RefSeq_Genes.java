@@ -117,6 +117,10 @@ public class HG38_RefSeq_Genes {
 				exonStarts = strLine.substring( indexofNinethTab + 1, indexofTenthTab);
 				exonEnds = strLine.substring( indexofTenthTab + 1, indexofEleventhTab);
 				geneSymbol = strLine.substring( indexofTwelfthTab + 1, indexofThirteenthTab);
+				
+				
+				//To make standard equality checks 
+				geneSymbol = geneSymbol.toUpperCase();
 
 				// For each strLine
 				exonStartList = new TIntArrayList( exonCounts);

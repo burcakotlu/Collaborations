@@ -5,5 +5,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Glanet"/>
 	<classpathentry kind="lib" path="lib/trove-3/3.0.3/lib/trove-3.0.3.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Common"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

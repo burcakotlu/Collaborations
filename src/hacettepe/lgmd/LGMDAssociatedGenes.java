@@ -6,7 +6,6 @@ package hacettepe.lgmd;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -25,9 +24,6 @@ import jaxbxjctool.RsInformation;
 import augmentation.humangenes.HumanGenesAugmentation;
 import auxiliary.FileOperations;
 import auxiliary.HG38RefSeqGeneInformation;
-import auxiliary.HG38_RefSeq_Genes;
-
-import common.Commons;
 
 /**
  * @author Burçak Otlu

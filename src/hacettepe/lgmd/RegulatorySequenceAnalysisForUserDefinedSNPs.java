@@ -10,7 +10,7 @@ import giveninputdata.Preparation;
 import org.apache.log4j.Logger;
 
 import rsat.GeneAnnotationForPostAnalysisRSAResults;
-import rsat.GenerationofAllTFAnnotationsFileInGRCh37p13AndInLatestAssembly;
+import rsat.GenerationofAllTFAnnotationsFileInGRCh37p13AndInLatestAssemblySimplified;
 import rsat.GenerationofSequencesandMatricesforSNPs;
 import rsat.RegulatorySequenceAnalysisPostAnalysis;
 import rsat.RegulatorySequenceAnalysisUsingRSATMatrixScan;
@@ -29,6 +29,11 @@ public class RegulatorySequenceAnalysisForUserDefinedSNPs {
 
 	public static void main(String[] args) {
 		
+		//This run uses input file "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_SomeColumns_LGMD-FamB-WES-All_chr_result.tep.txt"
+		//#chrName	_1BasedStartPositionGRCh37.p13	_1BasedEndPositionGRCh37.p13	SlashSeparatedObservedAlleles	Reference	GeneName	Function	HGVS	Control_13D0201099_mut_father	Control_13D0201100_mut_mother	Case_13D0201103_mut	rsID
+		//First four columns are required for this run.
+		//Existence of fifth or more columns are optional. They may exists or may not. Does not matter.
+		
 		/************************ Preparation starts ********************************************/
 		Preparation.main(args);
 		/************************ Preparation ends **********************************************/
@@ -38,7 +43,7 @@ public class RegulatorySequenceAnalysisForUserDefinedSNPs {
 		/************************ InputDataProcess ends *****************************************/
 
 		/************************ RemoveOverlaps starts ******************************************/
-		InputDataRemoveOverlaps.main( args);
+		InputDataRemoveOverlaps.main(args);
 		/************************ RemoveOverlaps ends ********************************************/
 		
 		/************************ Annotation starts ***********************************************/
@@ -47,16 +52,16 @@ public class RegulatorySequenceAnalysisForUserDefinedSNPs {
 
 		/************* Regulatory Sequence Analysis starts ****************************************/					
 		//part1
-		//I might change this one, simplify the conversion
-		GenerationofAllTFAnnotationsFileInGRCh37p13AndInLatestAssembly.main(args);
+		//DONE Simplify the conversion
+		GenerationofAllTFAnnotationsFileInGRCh37p13AndInLatestAssemblySimplified.main(args);
 
-		//I have to change the way I generate altered sequences by using user defined observed alleles.
-		///This might require the way I handle part1
+		//part2
+		//DONE Generate altered sequences by using user defined observed alleles.
 		GenerationofSequencesandMatricesforSNPs.main(args);
 
 		RegulatorySequenceAnalysisUsingRSATMatrixScan.main(args);
 		
-		RegulatorySequenceAnalysisPostAnalysis.main(args);
+		RegulatorySequenceAnalysisPostAnalysis.main(args);	
 		
 		GeneAnnotationForPostAnalysisRSAResults.main(args);			
 		/************* Regulatory Sequence Analysis ends ******************************************/

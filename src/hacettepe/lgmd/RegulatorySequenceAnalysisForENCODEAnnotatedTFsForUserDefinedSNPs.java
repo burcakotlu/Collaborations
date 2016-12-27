@@ -22,9 +22,9 @@ import annotation.Annotation;
  * @project Collaborations 
  *
  */
-public class RegulatorySequenceAnalysisForUserDefinedSNPs {
+public class RegulatorySequenceAnalysisForENCODEAnnotatedTFsForUserDefinedSNPs {
 	
-	final static Logger logger = Logger.getLogger(RegulatorySequenceAnalysisForUserDefinedSNPs.class);
+	final static Logger logger = Logger.getLogger(RegulatorySequenceAnalysisForENCODEAnnotatedTFsForUserDefinedSNPs.class);
 
 
 	public static void main(String[] args) {

@@ -23,7 +23,7 @@ import auxiliary.FileOperations;
  * LGMD is a term for a group of diseases that cause weakness and wasting of the muscles in the arms and legs.
  *
  */
-public class CommonVariantsElimination {
+public class FilterVariants {
 
 	
 	//15 DEC 2016
@@ -113,37 +113,32 @@ public class CommonVariantsElimination {
 		
 		//Input
 		String directoryNameandfileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LGMD-FamB-WES-All_chr_result.tep.txt";
-
-		//Output
-//		String directoryNameandRareVariantsWithAllColumnsfileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_All_Columns_LGMD-FamB-WES-All_chr_result.tep.txt";
-//		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_LGMD-FamB-WES-All_chr_result.tep.txt";
-//		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_LGMD-FamB-WES-All_chr_result.tep.txt";
-//		String directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID__chr4_related_haplotype_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_ChrName_GLANET1BasedCoordinateGRCh37p13_rsID_chr4_related_haplotype__LGMD-FamB-WES-All_chr_result.tep.txt";
 		
+		//Output This will be used for RSA for user defined alleles for ENCODE annotated TFs.
 		//This one will be used
-		String directoryNameandRareVariants_SomeColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_SomeColumns_LGMD-FamB-WES-All_chr_result.tep.txt";		
-		String directoryNameandRareVariants_AllColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\RareVariants_AllColumns_LGMD-FamB-WES-All_chr_result.tep.txt";
-		
+		String RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\FilterVariants\\RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns_LGMD-FamB-WES-All_chr_result.tep.txt";		
+		String RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\FilterVariants\\RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns_LGMD-FamB-WES-All_chr_result.tep.txt";
+
+		String RareNonSynonmousVariants_SomeColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\FilterVariants\\RareNonSynonmousVariants_SomeColumns_LGMD-FamB-WES-All_chr_result.tep.txt";		
+		String RareNonSynonmousVariants_AllColumns_InputFileGLANET = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\FilterVariants\\RareNonSynonmousVariants_AllColumns_LGMD-FamB-WES-All_chr_result.tep.txt";
+
 		FileReader fileReader = null;
 		BufferedReader bufferedReader = null;
 		
-		FileWriter fileWriter_RareVariants_SomeColumns = null;
-		BufferedWriter bufferedWriter_RareVariants_SomeColumns = null;
+		// with AutosomalRecessiveModel
+		FileWriter fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns = null;
+		BufferedWriter bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns = null;
 		
-		FileWriter fileWriter_RareVariants_AllColumns = null;
-		BufferedWriter bufferedWriter_RareVariants_AllColumns = null;
+		FileWriter fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns = null;
+		BufferedWriter bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns = null;
 		
-//		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = null;
-//		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = null;
-//		
-//		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = null;
-//		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = null;
-//
-//		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all = null;
-//		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all = null;
-//		
-//		FileWriter fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = null;
-//		BufferedWriter bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = null;
+		// without AutosomalRecessiveModel
+		FileWriter fileWriter_RareNonSynonmousVariants_SomeColumns = null;
+		BufferedWriter bufferedWriter_RareNonSynonmousVariants_SomeColumns = null;
+		
+		FileWriter fileWriter_RareNonSynonmousVariants_AllColumns = null;
+		BufferedWriter bufferedWriter_RareNonSynonmousVariants_AllColumns = null;
+
 		
 		String strLine = null;
 		
@@ -198,38 +193,39 @@ public class CommonVariantsElimination {
 			fileReader = FileOperations.createFileReader(directoryNameandfileName);
 			bufferedReader = new BufferedReader(fileReader);
 			
-			//Outputs
-			fileWriter_RareVariants_SomeColumns = FileOperations.createFileWriter(directoryNameandRareVariants_SomeColumns_InputFileGLANET);
-			bufferedWriter_RareVariants_SomeColumns = new BufferedWriter(fileWriter_RareVariants_SomeColumns);
+			//Outputs with AutosomalRecessiveModel
+			fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns = FileOperations.createFileWriter(RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns_InputFileGLANET);
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns = new BufferedWriter(fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns);
 			
-			fileWriter_RareVariants_AllColumns = FileOperations.createFileWriter(directoryNameandRareVariants_AllColumns_InputFileGLANET);
-			bufferedWriter_RareVariants_AllColumns = new BufferedWriter(fileWriter_RareVariants_AllColumns);
+			fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns = FileOperations.createFileWriter(RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns_InputFileGLANET);
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns = new BufferedWriter(fileWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns);
 			
-//			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID_InputFileGLANET);
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID);
-//
-//			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID_InputFileGLANET);
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID);
-//	
-//			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all_InputFileGLANET);
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all);
+			//Outputs without AutosomalRecessiveModel
+			fileWriter_RareNonSynonmousVariants_SomeColumns = FileOperations.createFileWriter(RareNonSynonmousVariants_SomeColumns_InputFileGLANET);
+			bufferedWriter_RareNonSynonmousVariants_SomeColumns = new BufferedWriter(fileWriter_RareNonSynonmousVariants_SomeColumns);
+			
+			fileWriter_RareNonSynonmousVariants_AllColumns = FileOperations.createFileWriter(RareNonSynonmousVariants_AllColumns_InputFileGLANET);
+			bufferedWriter_RareNonSynonmousVariants_AllColumns = new BufferedWriter(fileWriter_RareNonSynonmousVariants_AllColumns);
 
-//			fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = FileOperations.createFileWriter(directoryNameandRareVariants_ChrName_GLANET1BasedCoordinate_rsID__chr4_related_haplotype_InputFileGLANET);;
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype = new BufferedWriter(fileWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype);
-			
+		
 			//Skip header line
 			strLine = bufferedReader.readLine();
 			
 			//Write header line
-			bufferedWriter_RareVariants_SomeColumns.write("#chrName" +  "\t" + "_1BasedStartPositionGRCh37.p13" + "\t" + "_1BasedEndPositionGRCh37.p13" + "\t" + "SlashSeparatedObservedAlleles" + "\t" + "Reference" + "\t" + "GeneName" + "\t" + "Function" + "\t" + "HGVS" + "\t" + "Control_13D0201099_mut_father" + "\t" + "Control_13D0201100_mut_mother" + "\t" + "Case_13D0201103_mut" + "\t" + "rsID" +   System.getProperty("line.separator"));
-			bufferedWriter_RareVariants_AllColumns.write("#" + strLine + System.getProperty("line.separator")); 
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns.write("#chrName" +  "\t" + "_1BasedStartPositionGRCh37.p13" + "\t" + "_1BasedEndPositionGRCh37.p13" + "\t" + "SlashSeparatedObservedAlleles" + "\t" + "Reference" + "\t" + "GeneName" + "\t" + "Function" + "\t" + "HGVS" + "\t" + "Control_13D0201099_mut_father" + "\t" + "Control_13D0201100_mut_mother" + "\t" + "Case_13D0201103_mut" + "\t" + "rsID" +   System.getProperty("line.separator"));
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns.write("#" + strLine + System.getProperty("line.separator")); 
 			
+			bufferedWriter_RareNonSynonmousVariants_SomeColumns.write("#chrName" +  "\t" + "_1BasedStartPositionGRCh37.p13" + "\t" + "_1BasedEndPositionGRCh37.p13" + "\t" + "SlashSeparatedObservedAlleles" + "\t" + "Reference" + "\t" + "GeneName" + "\t" + "Function" + "\t" + "HGVS" + "\t" + "Control_13D0201099_mut_father" + "\t" + "Control_13D0201100_mut_mother" + "\t" + "Case_13D0201103_mut" + "\t" + "rsID" +   System.getProperty("line.separator"));
+			bufferedWriter_RareNonSynonmousVariants_AllColumns.write("#" + strLine + System.getProperty("line.separator")); 
+
 			while((strLine = bufferedReader.readLine())!=null){
 				
 				//Initialize
 				function = null;
 				rsID = null;
-				
+								
+				//Initialize for each line
+				//If there is "-" then accept frequency as 0.
 				dbSNP_fre = 0f;
 				_1000human_fre = 0f;
 				Hapmap_fre = 0f;
@@ -281,15 +277,6 @@ public class CommonVariantsElimination {
 				indexofTwentyFourthTab  = strLine.indexOf('\t',indexofTwentyThirdTab+1);
 				indexofTwentyFifthTab  = strLine.indexOf('\t',indexofTwentyFourthTab+1);
 				
-				//Initialize for each line
-				//If there is "-" then accept frequency as 0.
-				dbSNP_fre = 0f;
-				_1000human_fre = 0f;
-				Hapmap_fre = 0f;
-				Agilent_38M_fre = 0f;
-				Agilent_46M_fre = 0f;
-				Agilent_50M_fre = 0f;
-				Nimblegen_44M_fre = 0f;
 				
 				//dbSNP_fre
 				if (!strLine.substring(indexofTab+1, indexofSixteenthTab).equalsIgnoreCase("-")){
@@ -336,22 +323,28 @@ public class CommonVariantsElimination {
 						(Agilent_38M_fre<selectionCriteriaForRareVariant) && (Agilent_46M_fre<selectionCriteriaForRareVariant) && (Agilent_50M_fre<selectionCriteriaForRareVariant) &&
 						(Nimblegen_44M_fre<selectionCriteriaForRareVariant)){
 					
+					
 					//Filter Synonymous SNPs
 					if (!function.startsWith("Synonymous")){
 						
-//						bufferedWriter_RareVariants_WithAllColumns.write(strLine + System.getProperty("line.separator")); 
-//						bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate.write(chrName +  "\t" + _1BasedPosition + System.getProperty("line.separator"));
-//						bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID.write(chrName +  "\t" + _1BasedPosition + "\t" + rsID +   System.getProperty("line.separator"));
-	
-						if ( (Case_13D0201103_mut.contains("Hom") || Case_13D0201103_mut.contains("Het")) && Control_13D0201099_mut_father.contains("Het") && Control_13D0201100_mut_mother.contains("Het")){
-							
-							//prepareDataforUserDefinedSNPs
-							slashSeparatedObservedAlleles = getObservedAlleles(Case_13D0201103_mut);
+						//prepareDataforUserDefinedSNPs
+						slashSeparatedObservedAlleles = getObservedAlleles(Case_13D0201103_mut);
 
-							bufferedWriter_RareVariants_SomeColumns.write(chrName + "\t" + _1BasedPosition + "\t" + _1BasedPosition + "\t" + slashSeparatedObservedAlleles + "\t" + reference + "\t" + geneName + "\t" + function + "\t" + HGVS + "\t" + Control_13D0201099_mut_father + "\t" + Control_13D0201100_mut_mother + "\t" + Case_13D0201103_mut + "\t" + rsID +   System.getProperty("line.separator"));
-							bufferedWriter_RareVariants_AllColumns.write(strLine +   System.getProperty("line.separator"));
+						if (slashSeparatedObservedAlleles!=null){
 							
-						}
+							bufferedWriter_RareNonSynonmousVariants_SomeColumns.write(chrName + "\t" + _1BasedPosition + "\t" + _1BasedPosition + "\t" + slashSeparatedObservedAlleles + "\t" + reference + "\t" + geneName + "\t" + function + "\t" + HGVS + "\t" + Control_13D0201099_mut_father + "\t" + Control_13D0201100_mut_mother + "\t" + Case_13D0201103_mut + "\t" + rsID +   System.getProperty("line.separator"));
+							bufferedWriter_RareNonSynonmousVariants_AllColumns.write(strLine +   System.getProperty("line.separator"));
+						
+							//Autosomal Recessive Model
+							if ( (Case_13D0201103_mut.contains("Hom") || Case_13D0201103_mut.contains("Het")) && Control_13D0201099_mut_father.contains("Het") && Control_13D0201100_mut_mother.contains("Het")){
+								
+
+								bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns.write(chrName + "\t" + _1BasedPosition + "\t" + _1BasedPosition + "\t" + slashSeparatedObservedAlleles + "\t" + reference + "\t" + geneName + "\t" + function + "\t" + HGVS + "\t" + Control_13D0201099_mut_father + "\t" + Control_13D0201100_mut_mother + "\t" + Case_13D0201103_mut + "\t" + rsID +   System.getProperty("line.separator"));
+								bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns.write(strLine +   System.getProperty("line.separator"));
+								
+							}
+
+						}//End of IF slashSeparatedObservedAlleles is not NULL
 						
 						if (subsetFunctionMap.get(function)==null){
 							subsetFunctionMap.put(function,1);					
@@ -360,9 +353,6 @@ public class CommonVariantsElimination {
 						}
 						
 						
-//						if (chrName.equalsIgnoreCase(ChromosomeName.CHROMOSOME4.convertEnumtoString()) && _1BasedPosition < 70325709  &&  _1BasedPosition> 43884368){
-//							bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype.write(chrName +  "\t" + _1BasedPosition + "\t" + rsID +  "\t"  + function+ System.getProperty("line.separator"));
-//						}//End of if on chr4 haplotype
 					
 					}//End of if synonmyous SNPs
 					
@@ -402,13 +392,12 @@ public class CommonVariantsElimination {
 			
 			//Close
 			bufferedReader.close();
-			bufferedWriter_RareVariants_SomeColumns.close();
-			bufferedWriter_RareVariants_AllColumns.close();
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate.close();
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID.close();
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_rsID_on_chr4_related_haplotype.close();
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_rsID.close();
-//			bufferedWriter_RareVariants_ChrName_GLANET1BasedCoordinate_father_mother_case_all.close();
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_SomeColumns.close();
+			bufferedWriter_RareNonSynonmousVariants_withAutosomalRecessiceModel_AllColumns.close();
+			
+			bufferedWriter_RareNonSynonmousVariants_SomeColumns.close();
+			bufferedWriter_RareNonSynonmousVariants_AllColumns.close();
+			
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -425,12 +414,13 @@ public class CommonVariantsElimination {
 		
 		String observedAlleles = null;
 		
-		if (indexOfSecondSemiColon>0){
+		if (indexOfSecondSemiColon >= 0){
 			//+2AA;V33/W9;Hom
 			observedAlleles = Case_13D0201103_mut.substring(0,indexOfFirstSemiColon);
 			slashSeparatedObservedAlleles = observedAlleles;
-		}else{
+		}else if (indexOfFirstSemiColon >= 0){
 			//G90G44A0;Hom
+			System.out.println(Case_13D0201103_mut);
 			observedAlleles = Case_13D0201103_mut.substring(0,indexOfFirstSemiColon);
 			
 			int i=0;
@@ -516,6 +506,6 @@ public class CommonVariantsElimination {
 		//Do I get the same number of SNPs after filter?
 		//filterThatAreNotHomozygotOrCompoundHeterozygotInCase();
 		
-			}
+	}
 
 }

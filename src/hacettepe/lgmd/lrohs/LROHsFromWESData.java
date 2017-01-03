@@ -6,7 +6,9 @@ package hacettepe.lgmd.lrohs;
 import intervaltree.IntervalTree;
 import intervaltree.IntervalTreeNode;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -19,7 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -35,378 +36,22 @@ import enumtypes.ChromosomeName;
  */
 public class LROHsFromWESData extends JPanel {
 	
+	
 	private static final long serialVersionUID = -6778100197471577791L;	
+	
+	public final static int ONE_MILLION = 1000000;
 	
 	static Map<ChromosomeName, IntervalTree> caseBefore_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
 	static Map<ChromosomeName, IntervalTree> caseAfter_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
 	
-	
 	static Map<ChromosomeName, IntervalTree> controlFather_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
 	static Map<ChromosomeName, IntervalTree> controlMother_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
-	
-	
+	    
 	static List<IntervalTreeNode> candidateLocis = new ArrayList<IntervalTreeNode>();
+	
 	static Map<ChromosomeName,Integer> hg19ChromosomeName2ChromSize= new HashMap<ChromosomeName,Integer>();  
 	
-	public final static int ONE_MILLLION = 1000000;
-	
-	
-	public static void fillHg19ChromosomeSizes(){
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME1,249250621);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME2,243199373);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME3,198022430);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME4,191154276);		
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME5,180915260);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME6,171115067);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME7,159138663);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME8,146364022);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME9,141213431);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME10,135534747);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME11,135006516);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME12,133851895);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME13,115169878);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME14,107349540);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME15,102531392);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME16,90354753);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME17,81195210);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME18,78077248);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME19,59128983);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME20,63025520);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME21,48129895);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME22,51304566);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOMEX,155270560);
-		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOMEY,59373566);
-		
-//		chr1	249250621
-//		chr2	243199373
-//		chr3	198022430
-//		chr4	191154276
-//		chr5	180915260
-//		chr6	171115067
-//		chr7	159138663
-//		chrX	155270560
-//		chr8	146364022
-//		chr9	141213431
-//		chr10	135534747
-//		chr11	135006516
-//		chr12	133851895
-//		chr13	115169878
-//		chr14	107349540
-//		chr15	102531392
-//		chr16	90354753
-//		chr17	81195210
-//		chr18	78077248
-//		chr20	63025520
-//		chrY	59373566
-//		chr19	59128983
-//		chr22	51304566
-//		chr21	48129895
-
-	}
-	
-
-	public int getConvertedNumber(int x){
-		return Math.round(x*1.0f/ONE_MILLLION);
-	}
-	
-    public void fillLROHs(
-    		IntervalTreeNode node,
-    		Graphics g,
-    		int top_left_x,
-    		int top_left_y,
-    		int width,
-    		int enlargeFactor){
-    	
-    	int low;
-    	int high;
-    	int height;
-    	
-    	//Left Node
-		if( node.getLeft()!= null && node.getLeft().getNodeName().isNotSentinel())
-			fillLROHs(node.getLeft(),g,top_left_x,top_left_y,width,enlargeFactor);
-
-		//Middle Node
-		if( node.getNodeName().isNotSentinel()){
-			
-			low =getConvertedNumber(node.getLow()); 
-			high = getConvertedNumber(node.getHigh());
-			
-			height = high-low+1;
-			
-			g.setColor(Color.RED);
-			g.fillRect(top_left_x, top_left_y + (low*enlargeFactor), width, height*enlargeFactor);
-		}
-
-		//Right Node
-		if( node.getRight()!= null && node.getRight().getNodeName().isNotSentinel())
-			fillLROHs(node.getRight(),g,top_left_x,top_left_y,width,enlargeFactor);
-
-    }
     
-    
-    public void showCandidateVariants(
-    		Graphics g,
-    		List<IntervalTreeNode> candidateLocis,
-    		int width,
-    		int enlargeFactor,
-    		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap){
-    	
-//    	String star = "*";
-//    	char[] starCharArray = star.toCharArray();
-    	
-    	int candidate_y = -1;
-    	ChromosomeName chromosomeName = null; 
-    	
-    	
-    	Position rectangleTopLeftPosition = null;
-    	int x = -1;
-    	int y = -1;
-    	
-    	for(IntervalTreeNode candidate:candidateLocis){
-    		
-    		candidate_y = getConvertedNumber(candidate.getHigh());
-    		
-    		chromosomeName = candidate.getChromName();
-    		
-    		//debug delete later
-    		if (chromosomeName.equals(ChromosomeName.CHROMOSOME7)){
-    			System.out.println(candidate.getChromName() + "\t" + candidate.getLow() + "\t" + candidate.getHigh());
-    		}    		
-    		//debug delete later
-    		
-    		rectangleTopLeftPosition = caseAfter_chromosomeName2RectangleTopLeftPositionsMap.get(chromosomeName);
-    		
-    		x = Math.round(rectangleTopLeftPosition.getX() + (width*1.0f/2));
-    		y = rectangleTopLeftPosition.getY()+ candidate_y*enlargeFactor;
-    		
-    		g.setColor(Color.CYAN);
-
-    		//Star did not draw at the good position
-    		//g.drawChars(starCharArray, 0, starCharArray.length, x, y);
-    		
-    		//x-4 is for center it
-    		g.drawRect(x-4, y, 8, 1);
-    	
-    		
-    	}//End of for each candidate loci
-    	
-    }
-    
-    public void drawLROHs(
-    		Graphics g,
-			ChromosomeName chrName,
-			Map<ChromosomeName,IntervalTree> chromosomeName2IntervalTreeMap,
-			char[] beforeorAfterCharArray,
-			char[] caseorControlCharArray,
-			char[] chrCharArray,
-			Map<ChromosomeName,Integer> hg19ChromosomeName2ChromSize,
-			int top_left_x,
-			int top_left_y,
-			int enlargeFactor,
-			int width){
-    	
-    	IntervalTree intervalTree = chromosomeName2IntervalTreeMap.get(chrName);
-    	int chromSize = -1;
-    	int height = -1;
-    	
-    	g.setColor(Color.BLACK);  
-    	
-      	//Write Case or Control at upper y position
-    	g.drawChars(caseorControlCharArray, 0, caseorControlCharArray.length, top_left_x, top_left_y-30);
-    	
-    	//Write Before or After at upper y position
-    	if (beforeorAfterCharArray!=null){
-        	g.drawChars(beforeorAfterCharArray, 0, beforeorAfterCharArray.length, top_left_x, top_left_y-20);    		
-    	}
-
-     	//Write chrName at lower y position
-	     g.drawChars(chrCharArray, 0, chrCharArray.length, top_left_x, top_left_y-10);
-	       	
-		chromSize = hg19ChromosomeName2ChromSize.get(chrName);
-		height =getConvertedNumber(chromSize);
-		
-		//Draw chromosome rectangle
-		g.setColor(Color.GRAY);
-        g.fillRect(top_left_x,top_left_y,width,height*enlargeFactor);
-        
-        //Draw position indicator lines for each chromosome
-        g.setColor(Color.black);
-        for(Integer i=0; i< height;i= i+10){
-        	 g.drawChars(i.toString().toCharArray(), 0, i.toString().toCharArray().length, top_left_x-20,top_left_y+i*enlargeFactor);	        	
-        	 g.drawLine(top_left_x-5,top_left_y+i*enlargeFactor,top_left_x, top_left_y+i*enlargeFactor);	  	       
-        }
-        	      
-        //Draw LROHs of chromosome
-        if(intervalTree!= null && intervalTree.getRoot()!=null){
-	        fillLROHs(intervalTree.getRoot(),g,top_left_x,top_left_y,width,enlargeFactor);
-        }
-    	
-    }
-    
-	public void paintComponent(Graphics g) {
-		
-		char[] chrCharArray = null;
-		
-		char[] caseCharArray = null;
-		char[] beforeCharArray = null;
-		char[] afterCharArray = null;
-		char[] controlCharArray = null;
-		char[] controlMotherCharArray = null;
-		char[] controlFatherCharArray = null;
-		
-		///Enlarge the y position
-		int enlargeFactor = 3;
-		
-		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap = new HashMap<ChromosomeName,Position> ();
-				
-		int top_left_x = 30;
-		int top_left_y = 50;
-		
-		int width = 30;
-		int widthBetweenRectangles = 30;
-		int widthBetweenRectangleAndBorderLine = 20;
-		
-		int widthForBorderLine = 2;
-		int heigthForBorderLine = 250;
-		
-		fillHg19ChromosomeSizes();
-		
-        super.paintComponent(g);
-        
-//        g.setColor(Color.BLACK);
-//        g.drawRect(10,10, 50,250);
-//        
-//        g.setColor(Color.RED);
-//        g.drawLine(5, 50, 65, 50);
-//        
-//        g.setColor(Color.BLACK);
-//        g.fillRect(10,15, 50,40);
-
-        for(ChromosomeName chrName :ChromosomeName.values()){
-        	
-        
-        	caseCharArray = "Case".toCharArray();
-        	beforeCharArray = "Before".toCharArray();
-        	afterCharArray = "After".toCharArray();
-        	controlCharArray = "Control".toCharArray();        	
-        	controlMotherCharArray = "Mother".toCharArray();
-        	controlFatherCharArray = "Father".toCharArray();
-        	chrCharArray = chrName.convertEnumtoString().toCharArray();
-
-        	/*************************************************/
-        	/*************CASE Before starts******************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			caseBefore_chromosomeName2IntervalTreeMap,
-        			beforeCharArray,
-        			caseCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);   
-        	
-	        //Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangles;
-
-        	/*************************************************/
-        	/*************CASE Before ends********************/
-        	/*************************************************/
-        	
-        	
-           	/*************************************************/
-        	/*************CASE After starts********************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			caseAfter_chromosomeName2IntervalTreeMap,
-        			afterCharArray,
-        			caseCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);   
-        	
-        	caseAfter_chromosomeName2RectangleTopLeftPositionsMap.put(chrName, new Position(top_left_x, top_left_y));
-        	
-	        //Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangles;
-        	/*************************************************/
-        	/*************CASE After ends*********************/
-        	/*************************************************/
-	        
-      
-       	
-        	/*************************************************/
-        	/*************Control Mother starts***************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			controlMother_chromosomeName2IntervalTreeMap,
-        			controlMotherCharArray,
-        			controlCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);  
-        	
-          	//Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangles;
-        	/*************************************************/
-        	/*************Control Mother ends*****************/
-        	/*************************************************/
-        	
-         	
-        	
-           	/*************************************************/
-        	/*************Control Father starts***************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			controlFather_chromosomeName2IntervalTreeMap,        			
-        			controlFatherCharArray,
-        			controlCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);     
-        	
-        	//Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangleAndBorderLine;
-        	/*************************************************/
-        	/*************Control Father ends*****************/
-        	/*************************************************/
-        	
-        	/*************************************************/
-        	/****drawBorderLine Between chromsomes starts*****/
-        	/*************************************************/
-        	g.setColor(Color.black);
-        	g.fillRect(top_left_x, top_left_y, widthForBorderLine, heigthForBorderLine*enlargeFactor);
-        	
-        	top_left_x = top_left_x + width + widthBetweenRectangleAndBorderLine;
-        	/*************************************************/
-        	/*****drawBorderLine Between chromsomes ends******/
-        	/*************************************************/
-        	
-        	
-        }//End of FOR
-        
-        showCandidateVariants(g,
-        		candidateLocis,
-        		width,
-        		enlargeFactor,
-        		caseAfter_chromosomeName2RectangleTopLeftPositionsMap);
- 
-
-    }
 	
 	public static List<IntervalTreeNode> createIntervals( 
 			IntervalTreeNode intervalToBeChanged,
@@ -1002,7 +647,11 @@ public class LROHsFromWESData extends JPanel {
 		float Agilent_46M_fre = 0f;
 		float Agilent_50M_fre = 0f;
 		float Nimblegen_44M_fre = 0f;
-
+		
+		String Control_13D0201099_mut_father = null;
+		String Control_13D0201100_mut_mother = null;
+		String Case_13D0201103_mut = null;
+	
 		IntervalTreeNode intervalTreeNode = null;
 		IntervalTree intervalTree = null;
 		
@@ -1064,13 +713,13 @@ public class LROHsFromWESData extends JPanel {
 					}else if (count==7){
 						function = strLine.substring(indexofFormerTab+1, indexofTab);
 					}
-//					else if(count==10){
-//						Control_13D0201099_mut_father = strLine.substring(indexofFormerTab+1, indexofTab);
-//					}else if(count==12){
-//						Control_13D0201100_mut_mother = strLine.substring(indexofFormerTab+1, indexofTab);
-//					}else if(count==14){
-//						Case_13D0201103_mut = strLine.substring(indexofFormerTab+1, indexofTab);
-//					}
+					else if(count==10){
+						Control_13D0201099_mut_father = strLine.substring(indexofFormerTab+1, indexofTab);
+					}else if(count==12){
+						Control_13D0201100_mut_mother = strLine.substring(indexofFormerTab+1, indexofTab);
+					}else if(count==14){
+						Case_13D0201103_mut = strLine.substring(indexofFormerTab+1, indexofTab);
+					}
 					
 					indexofFormerTab = indexofTab;
 					indexofTab = strLine.indexOf('\t',indexofTab+1);
@@ -1129,47 +778,52 @@ public class LROHsFromWESData extends JPanel {
 					//Filter Synonymous SNPs
 					if (!function.startsWith("Synonymous")){
 						
-						chromosomeName = ChromosomeName.convertStringtoEnum(chrName);
-
-						//create the interval from SNP position
-						intervalTreeNode = new IntervalTreeNode(chromosomeName,_1BasedPosition,_1BasedPosition);
+						//Autosomal Recessive Model
+						if ( (Case_13D0201103_mut.contains("Hom") || Case_13D0201103_mut.contains("Het")) && Control_13D0201099_mut_father.contains("Het") && Control_13D0201100_mut_mother.contains("Het")){
+							
+							chromosomeName = ChromosomeName.convertStringtoEnum(chrName);
+	
+							//create the interval from SNP position
+							intervalTreeNode = new IntervalTreeNode(chromosomeName,_1BasedPosition,_1BasedPosition);
+							
+							//get the intervalTree
+							intervalTree = caseAfter_chromosomeName2IntervalTreeMap.get(chromosomeName);
+							
+							if(intervalTree!=null && intervalTree.getRoot()!=null & intervalTree.getRoot().getNodeName().isNotSentinel()){
+								
+								//Does it overlap with any interval in the case_afterOverlappingLROHsFromControlsRemoved_intervalTree?
+								List<IntervalTreeNode> overlappedNodeList = new ArrayList<IntervalTreeNode>();
+								intervalTree.findAllOverlappingIntervals(overlappedNodeList, intervalTree.getRoot(),intervalTreeNode);
+								
+								//If overlaps add it to the chrName2VariantList
+								if (overlappedNodeList.size()>0){
+									
+									//debug delete later
+									if (overlappedNodeList.size()>1){
+										System.out.println("Can it be?");
+									}
+									//debug delete later
+									
+									LROH_chrName = ChromosomeName.convertEnumtoString(overlappedNodeList.get(0).getChromName());
+									LROH_start = overlappedNodeList.get(0).getLow();
+									LROH_end = overlappedNodeList.get(0).getHigh();
+									LROH_length = LROH_end-LROH_start+1;
+									
+									case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants.write(strLine + "\t" + LROH_chrName + "\t" + LROH_start + "\t" +LROH_end + "\t" + LROH_length + System.getProperty("line.separator"));
+									
+																			
+									//TODO add check whether Case is Hom and Control is Het at candidate Loci
+									case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants.write(strLine +  "\t" + LROH_chrName + "\t" + LROH_start + "\t" + LROH_end + "\t" + LROH_length+ System.getProperty("line.separator"));								
+									candidateLocis.add(intervalTreeNode);
+									
+								}//End of if there is overlap
+								
+								overlappedNodeList = null;
+								
+							}//End of IF intervalTree is not null
 						
-						//get the intervalTree
-						intervalTree = caseAfter_chromosomeName2IntervalTreeMap.get(chromosomeName);
+						}//End of IF Autosomal Recessive Model
 						
-						if(intervalTree!=null && intervalTree.getRoot()!=null & intervalTree.getRoot().getNodeName().isNotSentinel()){
-							
-							//Does it overlap with any interval in the case_afterOverlappingLROHsFromControlsRemoved_intervalTree?
-							List<IntervalTreeNode> overlappedNodeList = new ArrayList<IntervalTreeNode>();
-							intervalTree.findAllOverlappingIntervals(overlappedNodeList, intervalTree.getRoot(),intervalTreeNode);
-							
-							//If overlaps add it to the chrName2VariantList
-							if (overlappedNodeList.size()>0){
-								
-								//debug delete later
-								if (overlappedNodeList.size()>1){
-									System.out.println("Can it be?");
-								}
-								//debug delete later
-								
-								LROH_chrName = ChromosomeName.convertEnumtoString(overlappedNodeList.get(0).getChromName());
-								LROH_start = overlappedNodeList.get(0).getLow();
-								LROH_end = overlappedNodeList.get(0).getHigh();
-								LROH_length = LROH_end-LROH_start+1;
-								
-								case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants.write(strLine + "\t" + LROH_chrName + "\t" + LROH_start + "\t" +LROH_end + "\t" + LROH_length + System.getProperty("line.separator"));
-								
-								
-										
-								//TODO add check whether Case is Hom and Control is Het at candidate Loci
-								case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants.write(strLine +  "\t" + LROH_chrName + "\t" + LROH_start + "\t" + LROH_end + "\t" + LROH_length+ System.getProperty("line.separator"));								
-								candidateLocis.add(intervalTreeNode);
-								
-							}//End of if there is overlap
-							
-							overlappedNodeList = null;
-							
-						}//End of IF intervalTree is not null
 						
 					}//End of IF NOT Synonymous
 					
@@ -1192,8 +846,370 @@ public class LROHsFromWESData extends JPanel {
 		}
 		
 	}
-
 	
+	
+	
+	
+	
+	public void paintComponent(Graphics g) {
+		
+		char[] chrCharArray = null;
+		
+		char[] caseCharArray = null;
+		char[] beforeCharArray = null;
+		char[] afterCharArray = null;
+		char[] controlCharArray = null;
+		char[] controlMotherCharArray = null;
+		char[] controlFatherCharArray = null;
+		
+		///Enlarge the y position
+		int enlargeFactor = 3;
+		
+		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap = new HashMap<ChromosomeName,Position> ();
+				
+		int top_left_x = 30;
+		int top_left_y = 50;
+		
+		int width = 30;
+		int widthBetweenRectangles = 30;
+		int widthBetweenRectangleAndBorderLine = 20;
+		
+		int widthForBorderLine = 2;
+		int heigthForBorderLine = 900/enlargeFactor;
+		
+		
+		 super.paintComponent(g);
+	       
+		fillHg19ChromosomeSizes();
+
+
+        for(ChromosomeName chrName :ChromosomeName.values()){
+        	
+        
+        	caseCharArray = "Case".toCharArray();
+        	beforeCharArray = "Before".toCharArray();
+        	afterCharArray = "After".toCharArray();
+        	controlCharArray = "Control".toCharArray();        	
+        	controlMotherCharArray = "Mother".toCharArray();
+        	controlFatherCharArray = "Father".toCharArray();
+        	chrCharArray = chrName.convertEnumtoString().toCharArray();
+
+        	/*************************************************/
+        	/*************CASE Before starts******************/
+        	/*************************************************/
+        	drawLROHs(g,
+        			chrName,
+        			caseBefore_chromosomeName2IntervalTreeMap,
+        			beforeCharArray,
+        			caseCharArray,
+        			chrCharArray,
+        			hg19ChromosomeName2ChromSize,
+        			top_left_x,
+        			top_left_y,
+        			enlargeFactor,
+        			width);   
+        	
+	        //Update top_left_x position for the next chromosome rectangle
+        	top_left_x = top_left_x + width + widthBetweenRectangles;
+
+        	/*************************************************/
+        	/*************CASE Before ends********************/
+        	/*************************************************/
+        	
+        	
+           	/*************************************************/
+        	/*************CASE After starts********************/
+        	/*************************************************/
+        	drawLROHs(g,
+        			chrName,
+        			caseAfter_chromosomeName2IntervalTreeMap,
+        			afterCharArray,
+        			caseCharArray,
+        			chrCharArray,
+        			hg19ChromosomeName2ChromSize,
+        			top_left_x,
+        			top_left_y,
+        			enlargeFactor,
+        			width);   
+        	
+        	caseAfter_chromosomeName2RectangleTopLeftPositionsMap.put(chrName, new Position(top_left_x, top_left_y));
+        	
+	        //Update top_left_x position for the next chromosome rectangle
+        	top_left_x = top_left_x + width + widthBetweenRectangles;
+        	/*************************************************/
+        	/*************CASE After ends*********************/
+        	/*************************************************/
+	        
+      
+       	
+        	/*************************************************/
+        	/*************Control Mother starts***************/
+        	/*************************************************/
+        	drawLROHs(g,
+        			chrName,
+        			controlMother_chromosomeName2IntervalTreeMap,
+        			controlMotherCharArray,
+        			controlCharArray,
+        			chrCharArray,
+        			hg19ChromosomeName2ChromSize,
+        			top_left_x,
+        			top_left_y,
+        			enlargeFactor,
+        			width);  
+        	
+          	//Update top_left_x position for the next chromosome rectangle
+        	top_left_x = top_left_x + width + widthBetweenRectangles;
+        	/*************************************************/
+        	/*************Control Mother ends*****************/
+        	/*************************************************/
+        	
+         	
+        	
+           	/*************************************************/
+        	/*************Control Father starts***************/
+        	/*************************************************/
+        	drawLROHs(g,
+        			chrName,
+        			controlFather_chromosomeName2IntervalTreeMap,        			
+        			controlFatherCharArray,
+        			controlCharArray,
+        			chrCharArray,
+        			hg19ChromosomeName2ChromSize,
+        			top_left_x,
+        			top_left_y,
+        			enlargeFactor,
+        			width);     
+        	
+        	//Update top_left_x position for the next chromosome rectangle
+        	top_left_x = top_left_x + width + widthBetweenRectangleAndBorderLine;
+        	/*************************************************/
+        	/*************Control Father ends*****************/
+        	/*************************************************/
+        	
+        	/*************************************************/
+        	/****drawBorderLine Between chromsomes starts*****/
+        	/*************************************************/
+        	g.setColor(Color.black);
+        	g.fillRect(top_left_x, top_left_y, widthForBorderLine, heigthForBorderLine*enlargeFactor);
+        	
+        	top_left_x = top_left_x + width + widthBetweenRectangleAndBorderLine;
+        	/*************************************************/
+        	/*****drawBorderLine Between chromsomes ends******/
+        	/*************************************************/
+        	
+        	
+        }//End of FOR
+        
+        showCandidateVariants(g,
+        		candidateLocis,
+        		width,
+        		enlargeFactor,
+        		caseAfter_chromosomeName2RectangleTopLeftPositionsMap);
+ 
+
+    }
+	
+	public static void fillHg19ChromosomeSizes(){
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME1,249250621);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME2,243199373);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME3,198022430);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME4,191154276);		
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME5,180915260);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME6,171115067);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME7,159138663);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME8,146364022);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME9,141213431);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME10,135534747);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME11,135006516);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME12,133851895);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME13,115169878);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME14,107349540);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME15,102531392);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME16,90354753);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME17,81195210);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME18,78077248);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME19,59128983);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME20,63025520);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME21,48129895);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOME22,51304566);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOMEX,155270560);
+		hg19ChromosomeName2ChromSize.put(ChromosomeName.CHROMOSOMEY,59373566);
+		
+//		chr1	249250621
+//		chr2	243199373
+//		chr3	198022430
+//		chr4	191154276
+//		chr5	180915260
+//		chr6	171115067
+//		chr7	159138663
+//		chrX	155270560
+//		chr8	146364022
+//		chr9	141213431
+//		chr10	135534747
+//		chr11	135006516
+//		chr12	133851895
+//		chr13	115169878
+//		chr14	107349540
+//		chr15	102531392
+//		chr16	90354753
+//		chr17	81195210
+//		chr18	78077248
+//		chr20	63025520
+//		chrY	59373566
+//		chr19	59128983
+//		chr22	51304566
+//		chr21	48129895
+
+	}
+	
+	 public void drawLROHs(
+	    		Graphics g,
+				ChromosomeName chrName,
+				Map<ChromosomeName,IntervalTree> chromosomeName2IntervalTreeMap,
+				char[] beforeorAfterCharArray,
+				char[] caseorControlCharArray,
+				char[] chrCharArray,
+				Map<ChromosomeName,Integer> hg19ChromosomeName2ChromSize,
+				int top_left_x,
+				int top_left_y,
+				int enlargeFactor,
+				int width){
+	    	
+	    	IntervalTree intervalTree = chromosomeName2IntervalTreeMap.get(chrName);
+	    	int chromSize = -1;
+	    	int height = -1;
+	    	
+	    	g.setColor(Color.BLACK);  
+	    	
+	      	//Write Case or Control at upper y position
+	    	g.drawChars(caseorControlCharArray, 0, caseorControlCharArray.length, top_left_x, top_left_y-30);
+	    	
+	    	//Write Before or After at upper y position
+	    	if (beforeorAfterCharArray!=null){
+	        	g.drawChars(beforeorAfterCharArray, 0, beforeorAfterCharArray.length, top_left_x, top_left_y-20);    		
+	    	}
+
+	     	//Write chrName at lower y position
+		     g.drawChars(chrCharArray, 0, chrCharArray.length, top_left_x, top_left_y-10);
+		       	
+			chromSize = hg19ChromosomeName2ChromSize.get(chrName);
+			height =getConvertedNumber(chromSize);
+			
+			//Draw chromosome whole rectangle
+			g.setColor(Color.GRAY);
+	        g.fillRect(top_left_x,top_left_y,width,height*enlargeFactor);
+	        
+	        //Draw position indicator lines for each chromosome
+	        g.setColor(Color.black);
+	        for(Integer i=0; i< height;i= i+10){
+	        	 g.drawChars(i.toString().toCharArray(), 0, i.toString().toCharArray().length, top_left_x-20,top_left_y+i*enlargeFactor);	        	
+	        	 g.drawLine(top_left_x-5,top_left_y+i*enlargeFactor,top_left_x, top_left_y+i*enlargeFactor);	  	       
+	        }
+	        	      
+	        //Draw LROHs of chromosome
+	        if(intervalTree!= null && intervalTree.getRoot()!=null){
+		        fillLROHs(intervalTree.getRoot(),g,top_left_x,top_left_y,width,enlargeFactor);
+	        }
+	    	
+	    }
+	    
+	 public int getConvertedNumber(int x){
+			return Math.round(x*1.0f/ONE_MILLION);
+		}
+		
+	    public void fillLROHs(
+	    		IntervalTreeNode node,
+	    		Graphics g,
+	    		int top_left_x,
+	    		int top_left_y,
+	    		int width,
+	    		int enlargeFactor){
+	    	
+	    	int low;
+	    	int high;
+	    	int height;
+	    	
+	    	//Left Node
+			if( node.getLeft()!= null && node.getLeft().getNodeName().isNotSentinel())
+				fillLROHs(node.getLeft(),g,top_left_x,top_left_y,width,enlargeFactor);
+
+			//Middle Node
+			if( node.getNodeName().isNotSentinel()){
+				
+				//One way
+				low =getConvertedNumber(node.getLow()); 
+				high = getConvertedNumber(node.getHigh());
+				
+				height = high-low+1;
+				
+				//Fill rectangle for the LROH
+				g.setColor(Color.RED);
+				
+				//Draw if LROH is greater than 10000 bp
+				if (node.getHigh()-node.getLow()>10000){
+					g.fillRect(top_left_x, top_left_y + (low*enlargeFactor), width, height*enlargeFactor);
+				}
+
+				
+//				//Second Way didn't work
+//				height = getConvertedNumber(node.getHigh()-node.getLow()+1);
+//				
+//				//Fill rectangle for the LROH
+//				g.setColor(Color.RED);
+//				g.fillRect(top_left_x, top_left_y + (low*enlargeFactor), width, height*enlargeFactor);
+
+			}
+
+			//Right Node
+			if( node.getRight()!= null && node.getRight().getNodeName().isNotSentinel())
+				fillLROHs(node.getRight(),g,top_left_x,top_left_y,width,enlargeFactor);
+
+	    }
+	    
+	    public void showCandidateVariants(
+	    		Graphics g,
+	    		List<IntervalTreeNode> candidateLocis,
+	    		int width,
+	    		int enlargeFactor,
+	    		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap){
+	    	
+//	    	String star = "*";
+//	    	char[] starCharArray = star.toCharArray();
+	    	
+	    	int candidate_y = -1;
+	    	ChromosomeName chromosomeName = null; 
+	    	
+	    	
+	    	Position rectangleTopLeftPosition = null;
+	    	int x = -1;
+	    	int y = -1;
+	    	
+	    	for(IntervalTreeNode candidate:candidateLocis){
+	    		
+	    		candidate_y = getConvertedNumber(candidate.getHigh());
+	    		
+	    		chromosomeName = candidate.getChromName();
+	    		
+	    	    		
+	    		rectangleTopLeftPosition = caseAfter_chromosomeName2RectangleTopLeftPositionsMap.get(chromosomeName);
+	    	
+	    		x = Math.round(rectangleTopLeftPosition.getX() + (width*1.0f/2));
+	    		y = rectangleTopLeftPosition.getY()+ candidate_y*enlargeFactor;
+	    		
+	    		g.setColor(Color.CYAN);
+
+	    		//Star did not draw at the good position
+	    		//g.drawChars(starCharArray, 0, starCharArray.length, x, y);
+	    		
+	    		//x-4 is for centering it
+	    		g.drawRect(x-4, y, 8, 1);
+	    		
+	    		g.drawRect(x, y-4, 1, 8);
+	    
+	    	}//End of for each candidate loci
+	    	
+	    }
+	    
 
 
 	/**
@@ -1241,18 +1257,27 @@ public class LROHsFromWESData extends JPanel {
 				selectionCriteriaForRareVariant);
 		
 		
-	    //GUI starts
-        JPanel panel = new LROHsFromWESData();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
-                       
-        JFrame window = new JFrame("LROHs from WES");
-        window.setContentPane(panel);
-        window.setSize(2000,1000);
-        window.setLocation(10,10);
-        window.setVisible(true);
-        //GUI ends
-
-
+		
+		//GUI starts
+		LROHsFromWESData mainPanel = new LROHsFromWESData();
+		//7000 must be parametric
+		mainPanel.setPreferredSize(new Dimension(7000, 1000));
+		mainPanel.setLayout(new BorderLayout());
+		
+	    JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);  //Let all scrollPanel has scroll bars
+	    scrollPane.setPreferredSize(new Dimension(1000, 900));
+		
+		
+	    JFrame frame = new JFrame("LROHs from WES");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.add(scrollPane);
+		frame.setSize(1000, 900);
+		frame.pack();
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true); 
+		//GUI ends
+		
+		
 		
 	}
 

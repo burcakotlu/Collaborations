@@ -10,6 +10,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -21,9 +27,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 
 import auxiliary.FileOperations;
 import enumtypes.ChromosomeName;
@@ -853,6 +865,9 @@ public class LROHsFromWESData extends JPanel {
 	
 	public void paintComponent(Graphics g) {
 		
+		
+		
+		
 		char[] chrCharArray = null;
 		
 		char[] caseCharArray = null;
@@ -868,7 +883,7 @@ public class LROHsFromWESData extends JPanel {
 		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap = new HashMap<ChromosomeName,Position> ();
 				
 		int top_left_x = 30;
-		int top_left_y = 50;
+		int top_left_y = 150;
 		
 		int width = 30;
 		int widthBetweenRectangles = 30;
@@ -878,7 +893,7 @@ public class LROHsFromWESData extends JPanel {
 		int heigthForBorderLine = 900/enlargeFactor;
 		
 		
-		 super.paintComponent(g);
+		super.paintComponent(g);
 	       
 		fillHg19ChromosomeSizes();
 
@@ -1211,10 +1226,17 @@ public class LROHsFromWESData extends JPanel {
 	    }
 	    
 
-
-	/**
-	 * @param args
-	 */
+	//Implement this method
+    public static void findLROHS(
+    		String caseColumn, 
+    		int[] controlSelectedIndices,
+    		String inputFileTextField,
+    		String numberOfConsecutiveHomVariantsRequired,
+    		String rareVariantThreshold){
+    	
+    	
+    }
+        
 	public static void main(String[] args) {
 		
 		//Read WES Data containing Case and Controls
@@ -1231,7 +1253,7 @@ public class LROHsFromWESData extends JPanel {
 		String case_AfterOverlapsRemoved_AugmentedWithVariants_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_AfterOverlappingControlLROHsRemoved_AugmentedWithVariants.txt";
 		
 		//After Meeting
-		//TODO Do not augment with control Hom snps
+		//Do not augment with control Hom snps
 		String case_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_AfterOverlappingControlLROHsRemoved_AugmentedWithNotCommonandSynonmousVariants.txt";
 	
 		int numberofConsecutiveHomVariantsRequired = 10;
@@ -1260,18 +1282,197 @@ public class LROHsFromWESData extends JPanel {
 		
 		//GUI starts
 		LROHsFromWESData mainPanel = new LROHsFromWESData();
-		//7000 must be parametric
+		//TODO 7000 must be parametric
 		mainPanel.setPreferredSize(new Dimension(7000, 1000));
 		mainPanel.setLayout(new BorderLayout());
+		
+		
+		GridBagConstraints constraints = new GridBagConstraints();
+        constraints.anchor = GridBagConstraints.PAGE_START;
+        constraints.insets = new Insets(5, 5, 5, 5);
+        constraints.fill = GridBagConstraints.BOTH;
+
+		JPanel userPanel = new JPanel();
+		userPanel.setLayout(new GridBagLayout());
+		
+	
+		         
+        /******************************************/
+        /**********Input File Panel starts*********/
+        /******************************************/
+		JPanel inputFilePanel = new JPanel();
+		inputFilePanel.setLayout(new GridBagLayout());
+
+		JButton browseButton = new JButton("Browse");
+		browseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	//Do Something
+            }
+        });
+		
+		JTextField inputFileTextField = new JTextField(30);
+
+		constraints.gridx = 0;
+        constraints.gridy = 0;     
+        inputFilePanel.add(browseButton, constraints);
+        
+        constraints.gridx = 1;
+        constraints.gridy = 0; 
+        inputFilePanel.add(inputFileTextField, constraints);
+        
+		// set border for the panel
+		inputFilePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Load Input File"));
+	    /******************************************/
+        /**********Input File Panel ends***********/
+        /******************************************/
+		
+        /******************************************/
+        /**********Threshold Panel starts**********/
+        /******************************************/
+		JPanel thresholdPanel = new JPanel();
+		thresholdPanel.setLayout(new GridBagLayout());
+				
+		JLabel numberOfConsecutiveHomVariantsRequiredLabel = new JLabel("Number Of Consecutive Homozygot Variants Required for LROH:");
+		JTextField numberOfConsecutiveHomVariantsRequired = new JTextField(10);
+		numberOfConsecutiveHomVariantsRequired.setText("10");
+		
+		JLabel rareVariantThresholdLabel = new JLabel("Rare Variant Threshold:");
+		JTextField rareVariantThreshold = new JTextField(10);
+		rareVariantThreshold.setText("0.05");
+	
+		constraints.gridx = 0;
+	    constraints.gridy = 0; 
+	    thresholdPanel.add(numberOfConsecutiveHomVariantsRequiredLabel,constraints);
+		
+		constraints.gridx = 1;
+	    constraints.gridy = 0; 
+	    thresholdPanel.add(numberOfConsecutiveHomVariantsRequired,constraints);
+		
+		constraints.gridx = 0;
+	    constraints.gridy = 1; 
+	    thresholdPanel.add(rareVariantThresholdLabel,constraints);
+		
+		constraints.gridx = 1;
+	    constraints.gridy = 1; 
+	    thresholdPanel.add(rareVariantThreshold,constraints);
+		
+		// set border for the panel
+	    thresholdPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Thresholds"));
+        /******************************************/
+        /**********Threshold Panel ends************/
+        /******************************************/
+		
+        /******************************************/
+        /****Case and control Panel starts*********/
+        /******************************************/
+		JPanel caseControlPanel =  new JPanel();
+		caseControlPanel.setLayout(new GridBagLayout());
+		
+		String[] options = { "Option1", "Option2", "Option3", "Option4", "Option15" };
+		JLabel caseColumnLabel = new JLabel("Select Case Column:");
+		JComboBox<String> caseColumn = new JComboBox<String>(options);
+		caseColumn.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Do something when you select a value
+
+            }
+        });
+
+		JLabel controlColumnLabel = new JLabel("Select Control Column/s:");
+		JList<String> controlList = new JList<String>(options);
+
+				
+		constraints.gridx = 0;
+	    constraints.gridy = 0; 
+		caseControlPanel.add(caseColumnLabel,constraints);
+		
+		constraints.gridx = 1;
+	    constraints.gridy = 0; 
+		caseControlPanel.add(caseColumn,constraints);
+		
+		constraints.gridx = 0;
+	    constraints.gridy = 1; 
+		caseControlPanel.add(controlColumnLabel,constraints);
+		
+		constraints.gridx = 1;
+	    constraints.gridy = 1; 
+		caseControlPanel.add(controlList,constraints);
+		
+		// set border for the panel
+		caseControlPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Select Case Column and Control Column/s"));
+        /******************************************/
+        /****Case and control Panel ends***********/
+        /******************************************/
+		
+	    /******************************************/
+        /**********Run Panel starts****************/
+        /******************************************/
+		JPanel runPanel =  new JPanel();
+		runPanel.setLayout(new GridBagLayout());
+		
+		// Button submit
+        JButton runButton = new JButton("Show LROHs...");
+        runButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                findLROHS((String) caseColumn.getSelectedItem(), controlList.getSelectedIndices(),inputFileTextField.getText(),numberOfConsecutiveHomVariantsRequired.getText(),rareVariantThreshold.getText());
+            }
+        });
+        
+		constraints.gridx = 0;
+	    constraints.gridy = 0; 
+	    runPanel.add(runButton,constraints);		
+	    /******************************************/
+        /**********Run Panel ends******************/
+        /******************************************/
+
+		
+	    /******************************************/
+        /******Add Panels toUser Panel starts******/
+        /******************************************/
+		constraints.gridx = 0;
+        constraints.gridy = 0; 
+		userPanel.add(inputFilePanel, constraints);
+		
+		constraints.gridx = 0;
+        constraints.gridy = 1; 
+		userPanel.add(thresholdPanel, constraints);
+		
+		constraints.gridx = 1;
+        constraints.gridy = 0; 
+       userPanel.add(caseControlPanel, constraints);
+        
+        constraints.gridx = 1;
+        constraints.gridy = 1; 
+		userPanel.add(runPanel, constraints);
+		
+		// set border for the panel
+		userPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "User Panel"));
+	    /******************************************/
+        /******Add Panels toUser Panel ends********/
+        /******************************************/
+        
 		
 	    JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);  //Let all scrollPanel has scroll bars
 	    scrollPane.setPreferredSize(new Dimension(1000, 900));
 		
-		
+	  
 	    JFrame frame = new JFrame("LROHs from WES");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		//I have added two panels two my frame.
+		//How to give upper panel a shorter height and lower panel a higher height?
+		frame.add(userPanel);		
 		frame.add(scrollPane);
 		frame.setSize(1000, 900);
+		
+		//What does it do?
+		//How graphics draws to mainPanel? How is it decided?
+		frame.setLayout(new GridLayout(0, 1));;
+		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true); 

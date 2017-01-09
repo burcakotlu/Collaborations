@@ -1294,8 +1294,11 @@ public class LROHsFromWESData extends JPanel {
 
 		JPanel userPanel = new JPanel();
 		userPanel.setLayout(new GridBagLayout());
+		//userPanel.setPreferredSize(new Dimension(7000,100));
+		userPanel.setMaximumSize(new Dimension(7000,100));
+		//userPanel.setMinimumSize(new Dimension(7000,100));
 		
-	
+
 		         
         /******************************************/
         /**********Input File Panel starts*********/
@@ -1307,6 +1310,7 @@ public class LROHsFromWESData extends JPanel {
 		browseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            	//TODO
             	//Do Something
             }
         });
@@ -1437,11 +1441,11 @@ public class LROHsFromWESData extends JPanel {
         constraints.gridy = 0; 
 		userPanel.add(inputFilePanel, constraints);
 		
-		constraints.gridx = 0;
-        constraints.gridy = 1; 
+		constraints.gridx = 1;
+        constraints.gridy = 0; 
 		userPanel.add(thresholdPanel, constraints);
 		
-		constraints.gridx = 1;
+		constraints.gridx = 2;
         constraints.gridy = 0; 
        userPanel.add(caseControlPanel, constraints);
         
@@ -1451,6 +1455,7 @@ public class LROHsFromWESData extends JPanel {
 		
 		// set border for the panel
 		userPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "User Panel"));
+	
 	    /******************************************/
         /******Add Panels toUser Panel ends********/
         /******************************************/
@@ -1465,13 +1470,29 @@ public class LROHsFromWESData extends JPanel {
 		
 		//I have added two panels two my frame.
 		//How to give upper panel a shorter height and lower panel a higher height?
-		frame.add(userPanel);		
-		frame.add(scrollPane);
-		frame.setSize(1000, 900);
+		//frame.add(userPanel);		
+		//frame.add(scrollPane);
+		//frame.setSize(1000, 900);
 		
 		//What does it do?
-		//How graphics draws to mainPanel? How is it decided?
-		frame.setLayout(new GridLayout(0, 1));;
+		//How graphics draws to mainPanel? How is it decided? Since mainPanel is the current instance that extends JPanel
+		//Therefore graphics are drawn on mainPanel
+		//frame.setLayout(new GridLayout(0, 1));;
+		frame.setLayout(new GridBagLayout());
+		
+		//I have added two panels two my frame.
+		//How to give upper panel a shorter height and lower panel a higher height?
+		
+		constraints.gridx = 0;
+        constraints.gridy = 0;     
+       frame.add(userPanel,constraints);		
+		
+       constraints.gridx = 0;
+       constraints.gridy = 1;
+       constraints.gridheight=4;
+       constraints.fill= GridBagConstraints.VERTICAL;     
+       frame.add(scrollPane,constraints);
+       //frame.setSize(1000, 900);
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);

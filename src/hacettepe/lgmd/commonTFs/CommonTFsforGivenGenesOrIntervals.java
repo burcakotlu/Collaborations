@@ -4,20 +4,34 @@
 package hacettepe.lgmd.commonTFs;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.rpc.ServiceException;
 
 import jaxbxjctool.NCBIEutils;
 import remap.Remap;
 import rsat.GenerationofSequencesandMatricesforSNPs;
 import rsat.PositionFrequencyAndLogoMatrices;
+import rsat.RegulatorySequenceAnalysisUsingRSATMatrixScan;
+import RSATWS.MatrixScanRequest;
+import RSATWS.MatrixScanResponse;
+import RSATWS.RSATWSPortType;
+import RSATWS.RSATWebServicesLocator;
 import auxiliary.FileOperations;
 import auxiliary.Interval;
+
 import common.Commons;
+
 import enumtypes.ChromosomeName;
 
 /**
@@ -29,105 +43,469 @@ import enumtypes.ChromosomeName;
 public class CommonTFsforGivenGenesOrIntervals {
 
 	
+	public static void fillUsingTheFirstResult( 
+			RSATResult rsatResult,
+			String matrixScanResult) {
+
+		String resultLine = null;
+
+		BufferedReader bufferedReader = new BufferedReader( new StringReader(matrixScanResult));
+
+		try{
+
+			while( ( resultLine = bufferedReader.readLine()) != null){
+
+				if( resultLine.charAt( 0) != ';' && resultLine.charAt( 0) != '#'){
+					fillRSATResult(resultLine,rsatResult);
+					break;
+				}// End of IF
+
+			}// End of WHILE
+
+			// Close bufferedReader
+			bufferedReader.close();
+
+		}catch( IOException e){
+			System.out.println(e.toString());
+		}
+
+	}
+
+	public static void fillRSATResult(
+			String resultLine,
+			RSATResult rsatResult) {
+
+		/*********************** SET DECIMAL FORMAT SEPARATORS *****************************/
+		//DecimalFormat df = GlanetDecimalFormat.getGLANETDecimalFormat( "0.######E0");
+		/*********************** SET DECIMAL FORMAT SEPARATORS *****************************/
+
+		String matrixName = null;
+		int indexofDot;
+		int matrixNumber = 0;
+
+		char direction = ' ';
+		int start = 0;
+		int end = 0;
+		String sequence = null;
+		double pValue = 0;
+
+		// example result line
+		// gi|568815587:47291327-47291355 site matrix-scan-matrix_2015-01-27.7 D
+		// 17 26 TTCACTGGAC 2.8 1.0e-02 -4.562 1.981 1 1
+
+		int indexofFirstTab = resultLine.indexOf( '\t');
+		int indexofSecondTab = ( indexofFirstTab > 0)?resultLine.indexOf( '\t', indexofFirstTab + 1):-1;
+		int indexofThirdTab = ( indexofSecondTab > 0)?resultLine.indexOf( '\t', indexofSecondTab + 1):-1;
+		int indexofFourthTab = ( indexofThirdTab > 0)?resultLine.indexOf( '\t', indexofThirdTab + 1):-1;
+		int indexofFifthTab = ( indexofFourthTab > 0)?resultLine.indexOf( '\t', indexofFourthTab + 1):-1;
+		int indexofSixthTab = ( indexofFifthTab > 0)?resultLine.indexOf( '\t', indexofFifthTab + 1):-1;
+		int indexofSeventhTab = ( indexofSixthTab > 0)?resultLine.indexOf( '\t', indexofSixthTab + 1):-1;
+		int indexofEigthTab = ( indexofSeventhTab > 0)?resultLine.indexOf( '\t', indexofSeventhTab + 1):-1;
+		int indexofNinethTab = ( indexofEigthTab > 0)?resultLine.indexOf( '\t', indexofEigthTab + 1):-1;
+
+		// RSAT convention MatrixNumber = LastNumber -1
+		// matrix name
+		// 1 matrix-scan_2014-08-29.2
+		// 2 matrix-scan_2014-08-29.3
+		// 3 matrix-scan_2014-08-29.4
+		// 4 matrix-scan_2014-08-29.5
+		// can be matrix-scan_2014-08-29
+
+		// matrix-scan-matrix_2014-08-29.14 means 13rd matrix in the file
+		matrixName = resultLine.substring( indexofSecondTab + 1, indexofThirdTab);
+		indexofDot = matrixName.indexOf( '.');
+		if( indexofDot >= 0){
+			matrixNumber = Integer.parseInt( matrixName.substring( indexofDot + 1)) - 1;
+		}else{
+			// if there is no '.' this means that there is only one matrix which
+			// is numbered 1.
+			matrixNumber = 1;
+		}
+
+		direction = resultLine.substring( indexofThirdTab + 1, indexofFourthTab).charAt( 0);
+		start = Integer.parseInt( resultLine.substring( indexofFourthTab + 1, indexofFifthTab));
+		end = Integer.parseInt( resultLine.substring( indexofFifthTab + 1, indexofSixthTab));
+		sequence = resultLine.substring( indexofSixthTab + 1, indexofSeventhTab);
+		pValue = Double.parseDouble( resultLine.substring( indexofEigthTab + 1, indexofNinethTab));
+
+		rsatResult.setMatrixName(matrixName);
+		rsatResult.setMatrixNumber(matrixNumber);
+		
+		rsatResult.setDirection(direction);
+		rsatResult.setStart(start);
+		rsatResult.setEnd(end);
+		rsatResult.setSequence(sequence);
+		rsatResult.setpValue(pValue);
+
+	}
+
+	public static String matrixScan(
+			String dnaSequenceInFasta, 
+			String pfmMatrices,
+			MatrixScanRequest matrixScanRequest, 
+			RSATWSPortType proxy) {
+
+		String result = null;
+
+		try{
+
+			matrixScanRequest.setSequence(dnaSequenceInFasta);
+			matrixScanRequest.setMatrix(pfmMatrices);
+
+			/***************************************************/
+			/************ Old Code starts ************************/
+			/***************************************************/
+			/* Call the service */
+			MatrixScanResponse response;
+			response = proxy.matrix_scan(matrixScanRequest);
+
+			/* Get the result */
+			result = response.getClient();
+			/***************************************************/
+			/************ Old Code ends **************************/
+			/***************************************************/
+	
+		}catch( RemoteException e){
+			System.out.println(e.toString());
+		}
+
+		return result;
+	}
 
 	public static void getDNASequenceCallRSATWriteResults(
 			Map<String,String> ENCODE_TFName2PFMMap,
 			Map<String,Interval> intervalName2IntervalMap){
 		
+		
+		//First way
+		Map<String,List<RSATResult>>  intervalName2RSATResultListMap = new HashMap<String,List<RSATResult>>();
+		
+		//Second way
+		Map<String,List<RSATResult>>  tfName2RSATResultListMap = new HashMap<String,List<RSATResult>>();
+		List<RSATResult> rsatResultList = null;
+		
+		
+		List<TFBasedResult> TFBasedResultList = new ArrayList<TFBasedResult>();
+		TFBasedResult tfBasedResult = null;
+			
+		Double avgPValue = 0d;
+		Double smallestPValue = 0d;
+		Double accumulatedLogRatio = 0d;
+		//List<Double> logRatioList = new ArrayList<Double>();
+		
+		
 		String intervalName = null;
 		Interval interval = null;
+		
+		String tfName = null;
+		String tfPFM = null;
+		
+		RSATResult rsatResult = null;
 		
 		ChromosomeName chromosomeName = null;
 		String chrName = null;
 		String fastaFile = null;
-		String referenceSequence = null;
 		
 		String dataFolder = "C:\\Users\\Burçak\\Google Drive\\Data\\";
 		Map<String, String> chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap = new HashMap<String, String>();	
 		
-		
-		
-		/***************************************************************************************/
-		/***************************************************************************************/
-		/***************************************************************************************/
-		String latestAssemblyNameReturnedByNCBIEutils = NCBIEutils.getLatestAssemblyNameReturnedByNCBIEutils();
-		/***************************************************************************************/
-		/***************************************************************************************/
-		/***************************************************************************************/
+		FileWriter fileWriter = null;
+		BufferedWriter bufferedWriter = null;
 
-		
-		/***************************************************************************************/
-		/***************************************************************************************/
-		/***************************************************************************************/
-		Map<String, String> assemblyName2RefSeqAssemblyIDMap = new HashMap<String, String>();
-		
-		Remap.remap_show_batches(dataFolder, Commons.NCBI_REMAP_API_SUPPORTED_ASSEMBLIES_FILE);
-		
-		Remap.fillAssemblyName2RefSeqAssemblyIDMap(
-				dataFolder, 
-				Commons.NCBI_REMAP_API_SUPPORTED_ASSEMBLIES_FILE,
-				assemblyName2RefSeqAssemblyIDMap);
-		/***************************************************************************************/
-		/***************************************************************************************/
-		/***************************************************************************************/
+		FileWriter fileWriter2 = null;
+		BufferedWriter bufferedWriter2 = null;
 
+		String RSATMatrixScanResult = null;
+			
 
-		/***************************************************************************************/
-		/***********************************Part3 starts****************************************/
-		/***************************************************************************************/
-		String refSeqAssemblyID = NCBIEutils.getRefSeqAssemblyID(latestAssemblyNameReturnedByNCBIEutils, assemblyName2RefSeqAssemblyIDMap);
-		/***************************************************************************************/
-		/***********************************Part3 ends******************************************/
-		/***************************************************************************************/
-
+		try {
+			fileWriter = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\RSATResults.txt");
+			bufferedWriter = new BufferedWriter( fileWriter);
+	
+			fileWriter2 = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\RSATResults_sorted_wrt_avg_pvalue.txt");
+			bufferedWriter2 = new BufferedWriter(fileWriter2);
+	
 		
-		/***************************************************************************************/
-		/***********************************Part4 starts****************************************/
-		/***************************************************************************************/
-		// Download from  ftp://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/All/RefSeqAssemblyID.assembly.txt
-		String assemblyReportFileName = Commons.ASSEMBLY_REPORTS +  refSeqAssemblyID + Commons.ASSEMBLY_REPORTS_FILE_EXTENSION ;
-		NCBIEutils.getAssemblyReport(refSeqAssemblyID, dataFolder, assemblyReportFileName);
-		/***************************************************************************************/
-		/***********************************Part4 ends******************************************/
-		/***************************************************************************************/
+			/***************************************************************************************/
+			/***************************************************************************************/
+			/***************************************************************************************/
+			String latestAssemblyNameReturnedByNCBIEutils = NCBIEutils.getLatestAssemblyNameReturnedByNCBIEutils();
+			/***************************************************************************************/
+			/***************************************************************************************/
+			/***************************************************************************************/
+	
+			
+			/***************************************************************************************/
+			/***************************************************************************************/
+			/***************************************************************************************/
+			Map<String, String> assemblyName2RefSeqAssemblyIDMap = new HashMap<String, String>();
+			
+			//Remap.remap_show_batches(dataFolder, Commons.NCBI_REMAP_API_SUPPORTED_ASSEMBLIES_FILE);
+			
+			Remap.fillAssemblyName2RefSeqAssemblyIDMap(
+					dataFolder, 
+					Commons.NCBI_REMAP_API_SUPPORTED_ASSEMBLIES_FILE,
+					assemblyName2RefSeqAssemblyIDMap);
+			/***************************************************************************************/
+			/***************************************************************************************/
+			/***************************************************************************************/
+	
+	
+			/***************************************************************************************/
+			/***********************************Part3 starts****************************************/
+			/***************************************************************************************/
+			String refSeqAssemblyID = NCBIEutils.getRefSeqAssemblyID(latestAssemblyNameReturnedByNCBIEutils, assemblyName2RefSeqAssemblyIDMap);
+			/***************************************************************************************/
+			/***********************************Part3 ends******************************************/
+			/***************************************************************************************/
+	
+			
+			/***************************************************************************************/
+			/***********************************Part4 starts****************************************/
+			/***************************************************************************************/
+			// Download from  ftp://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/All/RefSeqAssemblyID.assembly.txt
+			String assemblyReportFileName = Commons.ASSEMBLY_REPORTS +  refSeqAssemblyID + Commons.ASSEMBLY_REPORTS_FILE_EXTENSION ;
+			NCBIEutils.getAssemblyReport(refSeqAssemblyID, dataFolder, assemblyReportFileName);
+			/***************************************************************************************/
+			/***********************************Part4 ends******************************************/
+			/***************************************************************************************/
+							
+			/***************************************************************************************/
+			/***********************************Part5 starts****************************************/
+			/***************************************************************************************/
+			NCBIEutils.fillChrName2RefSeqIDMap(dataFolder, assemblyReportFileName, chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
+			/***************************************************************************************/
+			/***********************************Part5 ends******************************************/
+			/***************************************************************************************/
+
+			
+			/***************************************************************************************/
+			/***********************************RSAT starts*****************************************/
+			/***************************************************************************************/
+			RSATWebServicesLocator service = new RSATWebServicesLocator();
+
+			//User the server address for RSAT Metazoa
+			service.setRSATWSPortTypeEndpointAddress("http://rsat.sb-roscoff.fr/web_services/RSATWS.cgi");
+
+			RSATWSPortType proxy = null;
+
+			try{
+				proxy = service.getRSATWSPortType();
+			}catch( ServiceException e){
+			}
+			/***************************************************************************************/
+			/***********************************RSAT ends*******************************************/
+			/***************************************************************************************/
+			
+			
+			/**************************************************************************************************************************/
+			/************************* Initialize Matrix Scan Request Parameters starts ***********************************************/
+			/**************************************************************************************************************************/
+			MatrixScanRequest matrixScanRequest = new MatrixScanRequest();
+			
+			RegulatorySequenceAnalysisUsingRSATMatrixScan.initializeMatrixScanParameters(matrixScanRequest);
+			/**************************************************************************************************************************/
+			/************************* Initialize Matrix Scan Request Parameters ends *************************************************/
+			/**************************************************************************************************************************/
+		
+			
+			//The Second Way
+			//Call RSAT
+			//For each TF
+			//And then for each interval
+			for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
+				
+				tfName = tfEntry.getKey();
+				tfPFM = tfEntry.getValue();
+				
+				for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
+					intervalName = intervalEntry.getKey();
+					interval = intervalEntry.getValue();
+					
+					chromosomeName = interval.getChromosomeName();
+					chrName = chromosomeName.convertEnumtoString();
+					
+					fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
+							chrName.substring(3),
+							interval.getLow(),
+							interval.getHigh(),
+							chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
+					
+					rsatResult = new RSATResult();
+					
+					rsatResult.setIntervalName(intervalName);
+					rsatResult.setTfName(tfName);
+					
+					RSATMatrixScanResult = matrixScan( 
+							fastaFile, 
+							tfPFM,  
+							matrixScanRequest, 
+							proxy);
+					
+					if( RSATMatrixScanResult != null){
 						
-		/***************************************************************************************/
-		/***********************************Part5 starts****************************************/
-		/***************************************************************************************/
-		NCBIEutils.fillChrName2RefSeqIDMap(dataFolder, assemblyReportFileName, chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
-		/***************************************************************************************/
-		/***********************************Part5 ends******************************************/
-		/***************************************************************************************/
-
+						fillUsingTheFirstResult(rsatResult,RSATMatrixScanResult);
+						
+						rsatResultList = tfName2RSATResultListMap.get(tfName);
+						
+						if (rsatResultList==null){
+							rsatResultList = new ArrayList<RSATResult>();
+							rsatResultList.add(rsatResult);
+							tfName2RSATResultListMap.put(tfName, rsatResultList);
+						}else{
+							rsatResultList.add(rsatResult);
+						}
+					}//End of IF RSATResult is not null
+					
+					
+				}//End of for each interval
+				
+			}//End of for each Encode TF
+				
+			
+//			//First way
+//			for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
+//				intervalName = intervalEntry.getKey();
+//				interval = intervalEntry.getValue();
+//				
+//				chromosomeName = interval.getChromosomeName();
+//				chrName = chromosomeName.convertEnumtoString();
+//				
+//				
+//				//TODO
+//				//Think about it.
+//				//Can we declare strand for genes on negative strand? Yes for positive strand, we give strand=1
+//				//Most probably for negative strand, we give strand=2, check it.
+//				//get DNA Sequence
+//				//Check it: whether gene on - strand get the best matches with TFs on Reverse side
+//				//RSAT looks for both sides so getting DNA sequence on + or - strand does not matter.
+//				fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
+//						chrName.substring(3),
+//						interval.getLow(),
+//						interval.getHigh(),
+//						chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
+//	
+//				
+//				for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
+//					
+//					tfName = tfEntry.getKey();
+//					tfPFM = tfEntry.getValue();
+//					
+//					rsatResult = new RSATResult();
+//					
+//					rsatResult.setIntervalName(intervalName);
+//					rsatResult.setTfName(tfName);
+//					
+//					RSATMatrixScanResult = matrixScan( 
+//							fastaFile, 
+//							tfPFM,  
+//							matrixScanRequest, 
+//							proxy);
+//					
+//					if( RSATMatrixScanResult != null){
+//						
+//						fillUsingTheFirstResult(rsatResult,RSATMatrixScanResult);
+//						
+//						rsatResultList = intervalName2RSATResultListMap.get(intervalName);
+//						
+//						if (rsatResultList==null){
+//							rsatResultList = new ArrayList<RSATResult>();
+//							rsatResultList.add(rsatResult);
+//							intervalName2RSATResultListMap.put(intervalName, rsatResultList);
+//						}else{
+//							rsatResultList.add(rsatResult);
+//						}
+//					}
+//	
+//					
+//				}//End of FOR each TF PFM
+//								
+//			}//End of FOR each interval
+			
+			//Now sort the results with ascending p-Value
+			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+				rsatResultList = entry.getValue();
+				Collections.sort(rsatResultList, RSATResult.P_VALUE);
+			}
+			
+			
+			//Write header line
+			bufferedWriter.write(
+					"TfName"+ "\t" + 
+					"IntervalName"+ "\t" + 
+					"MatrixName" + "\t" + 
+					"MatrixNumber"+ "\t" + 
+					"Direction"+ "\t" + 
+					"Start"+ "\t" + 
+					"End"+ "\t" + 
+					"pValue"+ "\t" +
+					System.getProperty("line.separator"));
+			
+			//Now write the results with ascending p-Value
+			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+				
+				tfName = entry.getKey();
+				rsatResultList = entry.getValue();
+				
+				avgPValue = 0d;
+				accumulatedLogRatio = 0d;
+				
+				for(int i=0;i<rsatResultList.size();i++){		
+					if (i==0){
+						smallestPValue = rsatResultList.get(i).getpValue();
+					}else{
+						accumulatedLogRatio += Math.log(smallestPValue/rsatResultList.get(i).getpValue());
+					}
+					
+					bufferedWriter.write(
+							rsatResultList.get(i).getTfName()+ "\t" + 
+							rsatResultList.get(i).getIntervalName()+ "\t" + 
+							rsatResultList.get(i).getMatrixName()+ "\t" + 
+							rsatResultList.get(i).getMatrixNumber()+ "\t" + 
+							rsatResultList.get(i).getDirection()+ "\t" + 
+							rsatResultList.get(i).getStart()+ "\t" + 
+							rsatResultList.get(i).getEnd()+ "\t" + 
+							rsatResultList.get(i).getpValue()+ "\t" +
+							System.getProperty("line.separator"));
+					
+					avgPValue += rsatResultList.get(i).getpValue();
+					
+				}//End of for each RSATResult
+				
+				avgPValue = avgPValue/rsatResultList.size();
+				
+				tfBasedResult = new TFBasedResult(tfName,avgPValue, accumulatedLogRatio);
+				TFBasedResultList.add(tfBasedResult);
+				
+			}//End of for each RSATResultlist
+			
+			//Sort TFBasedResultList w.r.t. avgPValue in ascending order
+			Collections.sort(TFBasedResultList, TFBasedResult.AVG_P_VALUE);
+			
+			
+			//Write header
+			bufferedWriter2.write("TfName" + "\t" +
+					"AvgPValue" + "\t" +
+					"AccumulatedLogRatio" + "\t" +
+					System.getProperty("line.separator"));
+			for(int i=0;i<TFBasedResultList.size();i++){
+				tfBasedResult = TFBasedResultList.get(i);
+				bufferedWriter2.write(tfBasedResult.getTfName() + "\t" +
+						tfBasedResult.getAvgPValue() + "\t" +
+						tfBasedResult.getAccumulatedLogRatio() + "\t" +
+						System.getProperty("line.separator"));
+			}
+			
+			
+			//Close bufferedWriter
+			bufferedWriter.close();
+			bufferedWriter2.close();
 		
-		for(Map.Entry<String, Interval> entry:intervalName2IntervalMap.entrySet()){
-			intervalName = entry.getKey();
-			interval = entry.getValue();
-			
-			chromosomeName = interval.getChromosomeName();
-			chrName = chromosomeName.convertEnumtoString();
-			
-			
-			//TODO
-			//Think about it.
-			//Can we declare strand for genes on negative strand? Yes for positive strand, we give strand=1
-			//Most probably for negative strand, we give strand=2, check it.
-			//get DNA Sequence
-			//Check it: whether gene on - strand get the best matches on Reverse
-			fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
-					chrName.substring(3),
-					interval.getLow(),
-					interval.getHigh(),
-					chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
-			referenceSequence = GenerationofSequencesandMatricesforSNPs.getDNASequenceFromFastaFile(fastaFile);
-			
-			//TODO
-			//Call RSAT for each ENCODE TF PFM and reference sequence
-			//look at matrixScan of RegulatorySequenceAnalysisUsingRSATMatrixScan
-
-			
-		}//End of FOR each interval
 		
 	}
 
@@ -352,7 +730,9 @@ public class CommonTFsforGivenGenesOrIntervals {
 
 	public static void main(String[] args) {
 		
-		//Task1
+		/***************************************************/
+		/*********************Task1 starts******************/
+		/***************************************************/
 		//Create Intervals for given genes		
 		List<String> lgmdGeneSymbolList = new  ArrayList<String>();
 		lgmdGeneSymbolList.add("SGCA");
@@ -361,20 +741,37 @@ public class CommonTFsforGivenGenesOrIntervals {
 		lgmdGeneSymbolList.add("SGCD");
 		Map<String,Interval> intervalName2IntervalMap = new HashMap<String,Interval>();
 		createIntervals(lgmdGeneSymbolList,intervalName2IntervalMap);
+		/***************************************************/
+		/*********************Task1 ends********************/
+		/***************************************************/
 		
 
-		//Task2
-		//Consider ENCODE TFs
+		/***************************************************/
+		/*********************Task2 starts******************/
+		/***************************************************/
+		//Consider only ENCODE TFs
+		//Bookkeeping
 		//https://www.encodeproject.org/matrix/?type=Experiment
 		List<String> ENCODE_TFs_List = new ArrayList<String>();
 		getENCODETFs(ENCODE_TFs_List);
 		
-		//Task3
+		//for testing purposes
+//		List<String> small_ENCODE_TFs_List = new ArrayList<String>();
+//		for(int i=0; i<5;i++){
+//			small_ENCODE_TFs_List.add(ENCODE_TFs_List.get(i));
+//		}
+		/***************************************************/
+		/*********************Task2 ends********************/
+		/***************************************************/
+
+		
+		/***************************************************/
+		/*********************Task3 starts******************/
+		/***************************************************/
 		// Construct position frequency matrices from Jaspar Core
 		// Construct logo matrices from Jaspar Core
 		Map<String,String> tfName2TFPFMMap =new HashMap<String,String>();
 		Map<String,String> tfName2TFLogoMatricesMap =new HashMap<String,String>();		
-		Map<String,String> ENCODE_TFName2PFMMap = new HashMap<String,String>();
 			
 		String dataFolder = "C:\\Users\\Burçak\\Google Drive\\Data\\";
 		String jasparCoreInputFileName = Commons.JASPAR_CORE;
@@ -384,16 +781,27 @@ public class CommonTFsforGivenGenesOrIntervals {
 				tfName2TFPFMMap,
 				tfName2TFLogoMatricesMap);
 		
+		Map<String,String> ENCODE_TFName2PFMMap = new HashMap<String,String>();
 		fillENCODETFName2PFMMap(ENCODE_TFs_List,tfName2TFPFMMap,ENCODE_TFName2PFMMap);
+		/***************************************************/
+		/*********************Task3 ends********************/
+		/***************************************************/
+
 		
-		
-		
-		//Task4
+	
+		/***************************************************/
+		/*********************Task4 starts******************/
+		/***************************************************/
 		//Get DNA sequences for these intervals for the latest assembly
-		//Call RSAT web service
-		//Write the best TF matches for each gene 
+		//Call RSAT web service for each interval-TF pair
+		//Sort RSAT result for each gene in ascending order (the lower the p-value, the better the macth is)
+		//Find the common best matching TFs in top ten for each gene
+		//Write the RSAT outputs
 		getDNASequenceCallRSATWriteResults(ENCODE_TFName2PFMMap,intervalName2IntervalMap);
-		
+		/***************************************************/
+		/*********************Task4 ends********************/
+		/***************************************************/
+
 		
 	}
 

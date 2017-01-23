@@ -1,8 +1,11 @@
 /**
  * 
  */
-package hacettepe.lgmd.lrohs;
+package candidateVariantIdentification;
 
+import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import intervaltree.IntervalTree;
 import intervaltree.IntervalTreeNode;
 
@@ -12,12 +15,13 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -28,14 +32,17 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.border.LineBorder;
 
 import auxiliary.FileOperations;
 import enumtypes.ChromosomeName;
@@ -44,10 +51,16 @@ import enumtypes.ChromosomeName;
  * @author Burçak Otlu
  * @date Dec 26, 2016
  * @project Collaborations 
+ * 
+ * This class finds candidate variants by discarding common LROHs between case and controls from WES data.
  *
  */
-public class LROHsFromWESData extends JPanel {
+public class CandidateVariantIdentificationFromWES extends JPanel {
 	
+	private static JComboBox<String> caseColumn;
+	private static JList<String> controlList;
+	
+
 	
 	private static final long serialVersionUID = -6778100197471577791L;	
 	
@@ -56,15 +69,13 @@ public class LROHsFromWESData extends JPanel {
 	static Map<ChromosomeName, IntervalTree> caseBefore_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
 	static Map<ChromosomeName, IntervalTree> caseAfter_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
 	
-	static Map<ChromosomeName, IntervalTree> controlFather_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
-	static Map<ChromosomeName, IntervalTree> controlMother_chromosomeName2IntervalTreeMap= new HashMap<ChromosomeName, IntervalTree>();
+	static TIntObjectMap<Control> controlColumnNumber2ControlFeatureMap = new TIntObjectHashMap<Control>();
 	    
 	static List<IntervalTreeNode> candidateLocis = new ArrayList<IntervalTreeNode>();
 	
 	static Map<ChromosomeName,Integer> hg19ChromosomeName2ChromSize= new HashMap<ChromosomeName,Integer>();  
 	
     
-	
 	public static List<IntervalTreeNode> createIntervals( 
 			IntervalTreeNode intervalToBeChanged,
 			IntervalTreeNode overlappingInterval) {
@@ -107,8 +118,9 @@ public class LROHsFromWESData extends JPanel {
 
 	}
 	
-	public static void writeCaseIntervalTree(Map<ChromosomeName,IntervalTree> case_chromosomeName2IntervalTreeMap,
-			BufferedWriter case_AfterOverlapsRemoved_bufferedWriter_LROHs){
+	public static void writeCaseIntervalTree(
+			Map<ChromosomeName,IntervalTree> case_chromosomeName2IntervalTreeMap,
+			BufferedWriter case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved){
 		
 		IntervalTree intervalTree = null;
 		
@@ -117,7 +129,7 @@ public class LROHsFromWESData extends JPanel {
 			intervalTree = entry.getValue();
 			
 			if (intervalTree!=null && intervalTree.getRoot()!=null && intervalTree.getRoot().getNodeName().isNotSentinel()){
-				IntervalTree.intervalTreeInfixTraversal(intervalTree.getRoot(),case_AfterOverlapsRemoved_bufferedWriter_LROHs);
+				IntervalTree.intervalTreeInfixTraversal(intervalTree.getRoot(),case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved);
 			}
 			
 		}
@@ -166,10 +178,8 @@ public class LROHsFromWESData extends JPanel {
 
 						caseOverlappedNode = overlappedNodeList.get(i);
 						
-						//TODO
 						//Remove the overlap
 						//There can be one or two remaining intervals left
-						//updateMergedNode(mergedNode, caseOverlappedNode);
 						createdIntervals = createIntervals(caseOverlappedNode,controlIntervalTreeNode);
 						
 
@@ -265,6 +275,7 @@ public class LROHsFromWESData extends JPanel {
 			
 			//Output the homozygot region
 			bufferedWriter.write(chrName + "\t" + saved1BasedStart + "\t" + lastSaved1BasedStart  + "\t" + lengthofHomozygotRegion + System.getProperty("line.separator"));
+			bufferedWriter.flush();
 			
 			//Construct Interval Tree
 			intervalTreeNode = new IntervalTreeNode(chromosomeName,saved1BasedStart,lastSaved1BasedStart);								
@@ -279,65 +290,165 @@ public class LROHsFromWESData extends JPanel {
 	
 	//For control
 	public static void isHomozygotRegionFound(
-			int numberofConsecutiveHomozygotsFound,
 			int numberofConsecutiveHomVariantsRequired,			
 			String chrName,
 			ChromosomeName chromosomeName,
-			int saved1BasedStart,
-			int lastSaved1BasedStart,
-			BufferedWriter bufferedWriter,
-			List<IntervalTreeNode> intervalTreeNodeList,
-			Map<ChromosomeName, IntervalTree> chromosomeName2IntervalTreeMap) throws IOException{
+			Control control) throws IOException{
 		
 		int lengthofHomozygotRegion = -1;
 		IntervalTreeNode intervalTreeNode = null;
 		
-		if (numberofConsecutiveHomozygotsFound>= numberofConsecutiveHomVariantsRequired){
+		if (control.getNumberofConsecutiveHomozygotsFound()>= numberofConsecutiveHomVariantsRequired){
 			
-			lengthofHomozygotRegion = lastSaved1BasedStart-saved1BasedStart+1;
+			
+			lengthofHomozygotRegion = control.getLastSaved1BasedStart() - control.getSaved1BasedStart()+1;
 			
 			//Output the homozygot region
-			bufferedWriter.write(chrName + "\t" + saved1BasedStart + "\t" + lastSaved1BasedStart  + "\t" + lengthofHomozygotRegion + System.getProperty("line.separator"));
+			control.getBufferedWriter().write(chrName + "\t" + control.getSaved1BasedStart() + "\t" + control.getLastSaved1BasedStart()  + "\t" + lengthofHomozygotRegion + System.getProperty("line.separator"));
 			
 			//Fill Interval Tree Node List
-			intervalTreeNode = new IntervalTreeNode(chromosomeName,saved1BasedStart,lastSaved1BasedStart);	
-			intervalTreeNodeList.add(intervalTreeNode);
+			intervalTreeNode = new IntervalTreeNode(chromosomeName,control.getSaved1BasedStart(),control.getLastSaved1BasedStart());	
+			control.getIntervalTreeNodeList().add(intervalTreeNode);
 			
 			//Add to chrName2IntervalTreeMap
-			insert(chromosomeName,intervalTreeNode,chromosomeName2IntervalTreeMap);
+			insert(chromosomeName,intervalTreeNode,control.getChromosomeName2IntervalTreeMap());
 		
-		}
+		}//End of IF
 		
 	}
 	
 	
+	public static void createInitializeAndWriteHeaderLines(
+			List<String> controlColumnNames,
+			int[] controlCounts,
+			String outputDirectory,
+			TIntObjectMap<Control> controlColumnNumber2ControlFeatureMap) throws IOException{
+		
+		int controlcolumnNumber = -1;
+		String controlcolumnName = null;
+		
+		FileWriter control_fileWriter_LROHs = null;
+		BufferedWriter control_bufferedWriter_LROHs = null;
+		
+		Control controlFeatures = null;
+
+		
+		for(int i=0; i<controlColumnNames.size(); i++){
+			
+			controlcolumnName = controlColumnNames.get(i);
+			controlcolumnNumber = controlCounts[i];
+			
+			//Create fileWriter and bufferedWriter
+			control_fileWriter_LROHs = FileOperations.createFileWriter(outputDirectory +  System.getProperty("file.separator") + controlcolumnName  + "_LROHs_FROM_WES.txt");
+			control_bufferedWriter_LROHs = new BufferedWriter(control_fileWriter_LROHs);
+			
+			//Write header Line
+			control_bufferedWriter_LROHs.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
+			
+			
+			//Initialize
+			controlFeatures = new Control();
+			
+			controlFeatures.setName(controlcolumnName);
+			
+			controlFeatures.setIntervalTreeNodeList(new ArrayList<IntervalTreeNode>());
+			controlFeatures.setChromosomeName2IntervalTreeMap(new HashMap<ChromosomeName, IntervalTree>());
+			controlFeatures.setBufferedWriter(control_bufferedWriter_LROHs);
+			
+			controlFeatures.setSaved1BasedStart(-1);
+			controlFeatures.setLastSaved1BasedStart(-1);
+			controlFeatures.setNumberofConsecutiveHomozygotsFound(0);			
+			
+			//Put into map
+			controlColumnNumber2ControlFeatureMap.put(controlcolumnNumber, controlFeatures);
+				
+		}//End of FOR
+		
+	}
+	
+	
+	public static int fillCountsforCaseandControls(
+			String headerLine,
+			String caseColumnName,			
+			List<String> controlColumnNames,
+			//TIntObjectMap<String>
+			int[] controlColumnNumbers){
+		
+		int caseColumnNumber = -1;
+		
+		String columnName = null;
+		
+		int columnNumber = 0;
+		
+		int  indexofTab = -1;
+		int indexofPreviousTab = -1;
+		
+		indexofTab = headerLine.indexOf('\t');
+		
+		while(indexofTab>=0){
+			
+				
+			columnName = headerLine.substring(indexofPreviousTab+1, indexofTab); 
+			columnNumber++;
+			
+			if (columnName.equals(caseColumnName)){
+				caseColumnNumber = columnNumber;
+			}//End of IF
+			
+			for(int i=0; i<controlColumnNames.size();i++) {
+				if (columnName.equals(controlColumnNames.get(i))){
+					controlColumnNumbers[i] = columnNumber;
+				}//End of IF
+			}//End of FOR
+			
+			//update indexes
+			indexofPreviousTab = indexofTab;
+			indexofTab = headerLine.indexOf('\t',indexofPreviousTab+1);
+			
+		}//End of while
+		
+		
+		return caseColumnNumber;
+		
+	}
+
+	
+	public static boolean isCountInControlColumnNumbers(
+			int columnNumber,
+			int[] controlColumnNumbers){
+		
+		boolean contains = false;
+		
+		for(int i=0; i<controlColumnNumbers.length; i++){			
+			if (controlColumnNumbers[i]==columnNumber){
+				contains = true;
+				break;
+			}
+		}//End of for 
+		
+		return contains;
+		
+	}
 	
 	public static void findLROHs(
 			Map<ChromosomeName, IntervalTree> caseBefore_chromosomeName2IntervalTreeMap,
 			Map<ChromosomeName, IntervalTree> caseAfter_chromosomeName2IntervalTreeMap,
+			String inputFileName,
+			String caseColumnName,
+			List<String> controlColumnNames,
 			int numberofConsecutiveHomVariantsRequired,
-			String sortedWESDataInputFileName,
-			String case_outputFileName,
-			String case_AfterOverlapsRemoved_outputFileName,
-			String control_mother_outputFileName,
-			String control_father_outputFileName){
+			String outputDirectory){
 		
 		
 		FileReader fileReader = null;
 		BufferedReader bufferedReader = null;
 		
-		FileWriter case_fileWriter_LROHs = null;
-		BufferedWriter case_bufferedWriter_LROHs = null;
+		FileWriter case_fileWriter_LROHs_before = null;
+		BufferedWriter case_bufferedWriter_LROHs_before = null;
 		
-		FileWriter case_AfterOverlapsRemoved_fileWriter_LROHs = null;
-		BufferedWriter case_AfterOverlapsRemoved_bufferedWriter_LROHs = null;
+		FileWriter case_fileWriter_LROHs_AfterOverlappingLROHsRemoved = null;
+		BufferedWriter case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved = null;
 	
-		FileWriter control_mother_fileWriter_LROHs = null;
-		BufferedWriter control_mother_bufferedWriter_LROHs = null;
-
-		FileWriter control_father_fileWriter_LROHs = null;
-		BufferedWriter control_father_bufferedWriter_LROHs = null;
-
 		String strLine = null;
 		
 		String chrName = null;
@@ -348,55 +459,50 @@ public class LROHsFromWESData extends JPanel {
 		int case_LastSaved1BasedStart = -1;
 		int case_NumberofConsecutiveHomozygots = 0;
 		
-		int control_mother_Saved1BasedStart = -1;
-		int control_mother_LastSaved1BasedStart = -1;
-		int control_mother_NumberofConsecutiveHomozygots = 0;
-
-		int control_father_Saved1BasedStart = -1;
-		int control_father_LastSaved1BasedStart = -1;
-		int control_father_NumberofConsecutiveHomozygots = 0;
-
+		Control control = null;
+				
 		int indexofTab = -1;
 		int indexofFormerTab = -1;
 		int count = 0;
 		
 		String Case_13D0201103_mut = null;
-		String Control_13D0201099_mut_father = null;
-		String Control_13D0201100_mut_mother = null;	
+		String Control_Column = null;
 		
-		List<IntervalTreeNode> control_mother_IntervalTreeNodeList = new ArrayList<IntervalTreeNode>();
-		List<IntervalTreeNode> control_father_IntervalTreeNodeList = new ArrayList<IntervalTreeNode>();
+		int caseColumnNumber = -1;
+		int[] controlColumnNumbers = new int[controlColumnNames.size()];
+		
 		
 		//In order to do this input file must be sorted in ascending order for each chromosome				
 		try {
 			
 			//Input
-			fileReader = FileOperations.createFileReader(sortedWESDataInputFileName);
+			fileReader = FileOperations.createFileReader(inputFileName);
 			bufferedReader = new BufferedReader(fileReader);
 			
-			//Outputs
-			case_fileWriter_LROHs = FileOperations.createFileWriter(case_outputFileName);
-			case_bufferedWriter_LROHs = new BufferedWriter(case_fileWriter_LROHs);
+			//Outputs for Case Before
+			case_fileWriter_LROHs_before = FileOperations.createFileWriter(outputDirectory + System.getProperty("file.separator") + caseColumnName + "_LROHs_Before.txt");
+			case_bufferedWriter_LROHs_before = new BufferedWriter(case_fileWriter_LROHs_before);
 			
-			case_AfterOverlapsRemoved_fileWriter_LROHs = FileOperations.createFileWriter(case_AfterOverlapsRemoved_outputFileName);
-			case_AfterOverlapsRemoved_bufferedWriter_LROHs = new BufferedWriter(case_AfterOverlapsRemoved_fileWriter_LROHs);
-
-			control_mother_fileWriter_LROHs = FileOperations.createFileWriter(control_mother_outputFileName);
-			control_mother_bufferedWriter_LROHs = new BufferedWriter(control_mother_fileWriter_LROHs);
-			
-			control_father_fileWriter_LROHs = FileOperations.createFileWriter(control_father_outputFileName);
-			control_father_bufferedWriter_LROHs = new BufferedWriter(control_father_fileWriter_LROHs);
-			
-			//Fill chromosomeBasedIntervalTrees for case and controls
-								
+			//Outputs for Case After
+			case_fileWriter_LROHs_AfterOverlappingLROHsRemoved = FileOperations.createFileWriter(outputDirectory +  System.getProperty("file.separator") + caseColumnName + "_LROHs_AfterOverlappingLROHsRemoved.txt");
+			case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved = new BufferedWriter(case_fileWriter_LROHs_AfterOverlappingLROHsRemoved);
+											
 			//Skip header line
 			strLine = bufferedReader.readLine();
 			
-			//Write header line
-			case_bufferedWriter_LROHs.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
-			case_AfterOverlapsRemoved_bufferedWriter_LROHs.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
-			control_mother_bufferedWriter_LROHs.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
-			control_father_bufferedWriter_LROHs.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
+			//Get column numbers for case and controls
+			caseColumnNumber = fillCountsforCaseandControls(strLine,caseColumnName,controlColumnNames,controlColumnNumbers);
+			
+			//Does outputDirectory has file separator at the end? No.
+			createInitializeAndWriteHeaderLines(
+					controlColumnNames,
+					controlColumnNumbers,
+					outputDirectory,
+					controlColumnNumber2ControlFeatureMap);
+			
+			//For case write header lines
+			case_bufferedWriter_LROHs_before.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
+			case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved.write("chrName" + "\t" + "1BasedStart" + "\t" + "1BasedEnd" + "\t" + "lengthofHomozygotRegion" + "\t" + "numberofConsecutiveHomozygotsVariantsInCase" + System.getProperty("line.separator"));
 		
 			String formerChrName = "dummy";
 			
@@ -412,6 +518,7 @@ public class LROHsFromWESData extends JPanel {
 					
 					count++;
 					
+					//Same as in vcf format
 					if (count==1){
 						chrName = strLine.substring(0, indexofTab);	
 						chromosomeName = ChromosomeName.convertStringtoEnum(chrName);
@@ -427,113 +534,79 @@ public class LROHsFromWESData extends JPanel {
 									chromosomeName,
 									case_Saved1BasedStart,
 									case_LastSaved1BasedStart,
-									case_bufferedWriter_LROHs,
+									case_bufferedWriter_LROHs_before,
 									caseBefore_chromosomeName2IntervalTreeMap,
 									caseAfter_chromosomeName2IntervalTreeMap);							
 							//Case ends
 							
-							//Control_mother starts
-							isHomozygotRegionFound(
-									control_mother_NumberofConsecutiveHomozygots,
-									numberofConsecutiveHomVariantsRequired,
-									chrName,
-									chromosomeName,
-									control_mother_Saved1BasedStart,
-									control_mother_LastSaved1BasedStart,
-									control_mother_bufferedWriter_LROHs,
-									control_mother_IntervalTreeNodeList,
-									controlMother_chromosomeName2IntervalTreeMap);
-
-							//Control_mother ends
-							
-							
-							//Control_father starts
-							isHomozygotRegionFound(
-									control_father_NumberofConsecutiveHomozygots,
-									numberofConsecutiveHomVariantsRequired,
-									chrName,
-									chromosomeName,
-									control_father_Saved1BasedStart,
-									control_father_LastSaved1BasedStart,
-									control_father_bufferedWriter_LROHs,
-									control_father_IntervalTreeNodeList,
-									controlFather_chromosomeName2IntervalTreeMap);
-							//Control_father ends
-														
 							//We have started a new chromosome
 							//Chromosome has changed
 							//Then initialize
 							case_NumberofConsecutiveHomozygots = 0;
-							control_mother_NumberofConsecutiveHomozygots = 0;
-							control_father_NumberofConsecutiveHomozygots = 0;
+							
+							//For each Control starts
+							for (TIntObjectIterator<Control> itr = controlColumnNumber2ControlFeatureMap.iterator();itr.hasNext(); ){
+								
+								itr.advance();
+								
+								control = itr.value();
+								
+								isHomozygotRegionFound(									
+										numberofConsecutiveHomVariantsRequired,
+										chrName,
+										chromosomeName,
+										control);
+								
+								//We have started a new chromosome
+								//Chromosome has changed
+								//Then initialize
+								control.setNumberofConsecutiveHomozygotsFound(0);
+								
+							}//For each Control ends
+														
 							formerChrName = chrName;
 							
 						}
-					}else if (count==2){
+					}//End of count==1 chromosomeColumn
+					
+					//Same as in vcf format
+					else if (count==2){
 						_1BasedPosition= Integer.parseInt(strLine.substring(indexofFormerTab+1, indexofTab));
-					}else if(count==10){
-
-						//CONTROL_FATHER
-						Control_13D0201099_mut_father = strLine.substring(indexofFormerTab+1, indexofTab);
+					}
+					
+					else if(isCountInControlColumnNumbers(count,controlColumnNumbers)){
 						
-						if (Control_13D0201099_mut_father.endsWith("Hom")){
-							if (control_father_NumberofConsecutiveHomozygots==0){
+						//Get the control
+						control = controlColumnNumber2ControlFeatureMap.get(count);
+						
+						//Get the control column value
+						Control_Column = strLine.substring(indexofFormerTab+1, indexofTab);
+						
+						if (Control_Column.endsWith("Hom")){
+							if (control.getNumberofConsecutiveHomozygotsFound()==0){
 								//We have just started 
-								control_father_Saved1BasedStart = _1BasedPosition;
+								control.setSaved1BasedStart(_1BasedPosition);
 							}
-							control_father_NumberofConsecutiveHomozygots++;
-							control_father_LastSaved1BasedStart = _1BasedPosition;
-						}else if (Control_13D0201099_mut_father.endsWith("Het") || Control_13D0201099_mut_father.endsWith("ref")){
+							control.setNumberofConsecutiveHomozygotsFound(control.getNumberofConsecutiveHomozygotsFound()+1);
+							control.setLastSaved1BasedStart(_1BasedPosition);
+						}else if (Control_Column.endsWith("Het") || Control_Column.endsWith("ref")){
 							
 							isHomozygotRegionFound(
-									control_father_NumberofConsecutiveHomozygots,
 									numberofConsecutiveHomVariantsRequired,
 									chrName,
 									chromosomeName,
-									control_father_Saved1BasedStart,
-									control_father_LastSaved1BasedStart,
-									control_father_bufferedWriter_LROHs,
-									control_father_IntervalTreeNodeList,
-									controlFather_chromosomeName2IntervalTreeMap);
+									control);
 							
 							//Homozygot region is lost
 							//Initialize
-							control_father_NumberofConsecutiveHomozygots = 0;
+							control.setNumberofConsecutiveHomozygotsFound(0);
 						}
 						
 						
-					}else if(count==12){
-						
-						//CONTROL_MOTHER
-						Control_13D0201100_mut_mother = strLine.substring(indexofFormerTab+1, indexofTab);
-						
-						if (Control_13D0201100_mut_mother.endsWith("Hom")){
-							if (control_mother_NumberofConsecutiveHomozygots==0){
-								//We have just started 
-								control_mother_Saved1BasedStart = _1BasedPosition;
-							}
-							control_mother_NumberofConsecutiveHomozygots++;
-							control_mother_LastSaved1BasedStart = _1BasedPosition;
-						}else if (Control_13D0201100_mut_mother.endsWith("Het") || Control_13D0201100_mut_mother.endsWith("ref")){
-							
-							isHomozygotRegionFound(
-									control_mother_NumberofConsecutiveHomozygots,
-									numberofConsecutiveHomVariantsRequired,
-									chrName,
-									chromosomeName,
-									control_mother_Saved1BasedStart,
-									control_mother_LastSaved1BasedStart,
-									control_mother_bufferedWriter_LROHs,
-									control_mother_IntervalTreeNodeList,
-									controlMother_chromosomeName2IntervalTreeMap);
-							
-							//Homozygot region is lost
-							//Initialize
-							control_mother_NumberofConsecutiveHomozygots = 0;
-						}
-						
-						
-					}else if(count==14){
+					}//End of IF one of control column
+					
+					
+					else if(count==caseColumnNumber){
 						
 						//CASE PROBAND
 						Case_13D0201103_mut = strLine.substring(indexofFormerTab+1, indexofTab);
@@ -554,7 +627,7 @@ public class LROHsFromWESData extends JPanel {
 									chromosomeName,
 									case_Saved1BasedStart,
 									case_LastSaved1BasedStart,
-									case_bufferedWriter_LROHs,
+									case_bufferedWriter_LROHs_before,
 									caseBefore_chromosomeName2IntervalTreeMap,
 									caseAfter_chromosomeName2IntervalTreeMap);		
 							
@@ -562,11 +635,8 @@ public class LROHsFromWESData extends JPanel {
 							//Initialize
 							case_NumberofConsecutiveHomozygots = 0;
 						}
-						
-						//Please notice that we don't care - cases for Case_13D0201103_mut
-						//We skip them
-						
-					}
+							
+					}//End of CASE
 					
 					indexofFormerTab = indexofTab;
 					indexofTab = strLine.indexOf('\t',indexofTab+1);
@@ -577,24 +647,34 @@ public class LROHsFromWESData extends JPanel {
 			}//End of while reading input file
 			
 		  
+			//Remove overlapping LROHs from case for each control
+			for(TIntObjectIterator<Control> itr = controlColumnNumber2ControlFeatureMap.iterator();itr.hasNext();){
+				
+				itr.advance();			
+				control = itr.value();
+				
+				removeOverlapsFromCaseUsingControlAutozygotRegions(
+						caseAfter_chromosomeName2IntervalTreeMap,
+						control.getIntervalTreeNodeList());
+			}//End of for each control
 			
-			removeOverlapsFromCaseUsingControlAutozygotRegions(
-					caseAfter_chromosomeName2IntervalTreeMap,
-					control_mother_IntervalTreeNodeList);
-			
-			removeOverlapsFromCaseUsingControlAutozygotRegions(
-					caseAfter_chromosomeName2IntervalTreeMap,
-					control_father_IntervalTreeNodeList);
-			
-			writeCaseIntervalTree(caseAfter_chromosomeName2IntervalTreeMap,case_AfterOverlapsRemoved_bufferedWriter_LROHs);
+			writeCaseIntervalTree(caseAfter_chromosomeName2IntervalTreeMap,case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved);
 			
 		
-			//Close
+			//Close BufferedReader and BufferedWriters
 			bufferedReader.close();
-			case_bufferedWriter_LROHs.close();
-			case_AfterOverlapsRemoved_bufferedWriter_LROHs.close();
-			control_mother_bufferedWriter_LROHs.close();
-			control_father_bufferedWriter_LROHs.close();
+			case_bufferedWriter_LROHs_before.close();
+			case_bufferedWriter_LROHs_AfterOverlappingLROHsRemoved.close();
+			
+			//Close bufferedWriter for each control
+			for (TIntObjectIterator<Control> itr = controlColumnNumber2ControlFeatureMap.iterator();itr.hasNext(); ){
+				
+				itr.advance();
+		
+				control = itr.value();
+				control.getBufferedWriter().close();
+			}
+		
 
 			
 		} catch (IOException e) {
@@ -617,6 +697,12 @@ public class LROHsFromWESData extends JPanel {
 		FileReader fileReader = null;
 		BufferedReader bufferedReader = null;
 		
+		FileWriter case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_fileWriter = null;
+		BufferedWriter case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_bufferedWriter = null;
+		
+		FileWriter case_Hom_filter_wrt_aotosomal_recessive_mode_fileWriter = null;
+		BufferedWriter case_Hom_filter_wrt_aotosomal_recessive_mode_bufferedWriter = null;
+
 		FileWriter case_fileWriter_AfterOverlapsRemoved_AugmentedWithVariants = null;
 		BufferedWriter case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants = null;
 		
@@ -628,9 +714,6 @@ public class LROHsFromWESData extends JPanel {
 		String chrName = null;
 		ChromosomeName chromosomeName = null;
 		int _1BasedPosition = -1;
-//		String reference = null;
-//		String geneName=null;
-//		String HGVS = null;
 		
 		//Chromosome	Position	Reference	GeneName	OMIM	Inheritance	Function	HGVS	ShareNumber	Control_13D0201099_mut	Ration	Control_13D0201100_mut	Ration	Case_13D0201103_mut	Ration	dbSNP_fre	1000human_fre	Hapmap_fre	Agilent_38M_fre	Agilent_46M_fre	Agilent_50M_fre	Nimblegen_44M_fre	Prediction from SIFT	Score from SIFT	RS-ID	NM-ID	Sub-region	Strand	ResidueChange	Gene description	GO_BP	GO_MF	GO_CC	KEGG_Pathway
 
@@ -647,10 +730,6 @@ public class LROHsFromWESData extends JPanel {
 		int count = 0;
 		
 		String function = null;
-//		String Case_13D0201103_mut = null;
-//		String Control_13D0201099_mut_father = null;
-//		String Control_13D0201100_mut_mother = null;		
-//		String rsID = null;
 		
 		float dbSNP_fre = 0f;
 		float _1000human_fre = 0f;
@@ -680,6 +759,12 @@ public class LROHsFromWESData extends JPanel {
 			bufferedReader = new BufferedReader(fileReader);
 			
 			//Outputs
+			case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_fileWriter =  FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\excel_case_Hom_or_Het_filter.txt");
+			case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_bufferedWriter = new BufferedWriter(case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_fileWriter);
+
+			case_Hom_filter_wrt_aotosomal_recessive_mode_fileWriter =  FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\excel_case_Hom_filter.txt");
+			case_Hom_filter_wrt_aotosomal_recessive_mode_bufferedWriter = new BufferedWriter(case_Hom_filter_wrt_aotosomal_recessive_mode_fileWriter);
+
 			case_fileWriter_AfterOverlapsRemoved_AugmentedWithVariants = FileOperations.createFileWriter(case_AfterOverlapsRemoved_AugmentedWithVariants_outputFileName);
 			case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants = new BufferedWriter(case_fileWriter_AfterOverlapsRemoved_AugmentedWithVariants);
 			
@@ -791,7 +876,16 @@ public class LROHsFromWESData extends JPanel {
 					if (!function.startsWith("Synonymous")){
 						
 						//Autosomal Recessive Model
+						//TODO Can control variant be  "ref"? 
 						if ( (Case_13D0201103_mut.contains("Hom") || Case_13D0201103_mut.contains("Het")) && Control_13D0201099_mut_father.contains("Het") && Control_13D0201100_mut_mother.contains("Het")){
+							
+							//debug for excel filtering versions starts
+							case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_bufferedWriter.write(strLine + System.getProperty("line.separator"));								
+							if (Case_13D0201103_mut.contains("Hom")){
+								case_Hom_filter_wrt_aotosomal_recessive_mode_bufferedWriter.write(strLine + System.getProperty("line.separator"));																
+							}
+							//debug for excel filtering versions ends
+							
 							
 							chromosomeName = ChromosomeName.convertStringtoEnum(chrName);
 	
@@ -810,6 +904,8 @@ public class LROHsFromWESData extends JPanel {
 								//If overlaps add it to the chrName2VariantList
 								if (overlappedNodeList.size()>0){
 									
+									//TODO for numberofconsecutive homozygot variants required for LROH = 1 debug it
+									//It must give the same excel filter output case = Hom and control = Het
 									//debug delete later
 									if (overlappedNodeList.size()>1){
 										System.out.println("Can it be?");
@@ -824,8 +920,9 @@ public class LROHsFromWESData extends JPanel {
 									case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants.write(strLine + "\t" + LROH_chrName + "\t" + LROH_start + "\t" +LROH_end + "\t" + LROH_length + System.getProperty("line.separator"));
 									
 																			
-									//TODO add check whether Case is Hom and Control is Het at candidate Loci
+									//This is done in  Autosomal Recessive Model: add check whether Case is Hom and Control is Het at candidate Loci
 									case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants.write(strLine +  "\t" + LROH_chrName + "\t" + LROH_start + "\t" + LROH_end + "\t" + LROH_length+ System.getProperty("line.separator"));								
+									
 									candidateLocis.add(intervalTreeNode);
 									
 								}//End of if there is overlap
@@ -844,16 +941,18 @@ public class LROHsFromWESData extends JPanel {
 				
 			}//End of WHILE reading sorted WES data in ascending 1BasedSNP position
 			
-			
-	
+
 			
 			//Close
 			bufferedReader.close();
 			case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithVariants.close();
 			case_bufferedWriter_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants.close();
 			
+			//Close for debugging purposes
+			case_Hom_or_Het_filter_wrt_aotosomal_recessive_mode_bufferedWriter.close();
+			case_Hom_filter_wrt_aotosomal_recessive_mode_bufferedWriter.close();
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -865,8 +964,8 @@ public class LROHsFromWESData extends JPanel {
 	
 	public void paintComponent(Graphics g) {
 		
-		
-		
+		Control control = null;
+		//Integer controlColumnNumber= new Integer(0);
 		
 		char[] chrCharArray = null;
 		
@@ -874,16 +973,15 @@ public class LROHsFromWESData extends JPanel {
 		char[] beforeCharArray = null;
 		char[] afterCharArray = null;
 		char[] controlCharArray = null;
-		char[] controlMotherCharArray = null;
-		char[] controlFatherCharArray = null;
-		
+	
 		///Enlarge the y position
 		int enlargeFactor = 3;
 		
 		Map<ChromosomeName,Position> caseAfter_chromosomeName2RectangleTopLeftPositionsMap = new HashMap<ChromosomeName,Position> ();
-				
+		
+		//Shows the top left most point where the drawing starts
 		int top_left_x = 30;
-		int top_left_y = 150;
+		int top_left_y = 60;
 		
 		int width = 30;
 		int widthBetweenRectangles = 30;
@@ -905,8 +1003,6 @@ public class LROHsFromWESData extends JPanel {
         	beforeCharArray = "Before".toCharArray();
         	afterCharArray = "After".toCharArray();
         	controlCharArray = "Control".toCharArray();        	
-        	controlMotherCharArray = "Mother".toCharArray();
-        	controlFatherCharArray = "Father".toCharArray();
         	chrCharArray = chrName.convertEnumtoString().toCharArray();
 
         	/*************************************************/
@@ -956,50 +1052,35 @@ public class LROHsFromWESData extends JPanel {
         	/*************************************************/
 	        
       
-       	
-        	/*************************************************/
-        	/*************Control Mother starts***************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			controlMother_chromosomeName2IntervalTreeMap,
-        			controlMotherCharArray,
-        			controlCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);  
+			for(TIntObjectIterator<Control> itr = controlColumnNumber2ControlFeatureMap.iterator();itr.hasNext();){
+				
+				itr.advance();
+			
+				//controlColumnNumber = itr.key();
+				control = itr.value();
+
+				//TODO write the control Column Name not the column number
+				//But it is long beware of this
+				drawLROHs(g,
+	        			chrName,
+	        			control.getChromosomeName2IntervalTreeMap(),
+	        			control.getName().toCharArray(),
+	        			controlCharArray,
+	        			chrCharArray,
+	        			hg19ChromosomeName2ChromSize,
+	        			top_left_x,
+	        			top_left_y,
+	        			enlargeFactor,
+	        			width);  
+	        	
+	          	//Update top_left_x position for the next chromosome rectangle
+	        	top_left_x = top_left_x + width + widthBetweenRectangles;
+				
+			}//End of for each control
+			
+
         	
-          	//Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangles;
-        	/*************************************************/
-        	/*************Control Mother ends*****************/
-        	/*************************************************/
-        	
-         	
-        	
-           	/*************************************************/
-        	/*************Control Father starts***************/
-        	/*************************************************/
-        	drawLROHs(g,
-        			chrName,
-        			controlFather_chromosomeName2IntervalTreeMap,        			
-        			controlFatherCharArray,
-        			controlCharArray,
-        			chrCharArray,
-        			hg19ChromosomeName2ChromSize,
-        			top_left_x,
-        			top_left_y,
-        			enlargeFactor,
-        			width);     
-        	
-        	//Update top_left_x position for the next chromosome rectangle
-        	top_left_x = top_left_x + width + widthBetweenRectangleAndBorderLine;
-        	/*************************************************/
-        	/*************Control Father ends*****************/
-        	/*************************************************/
+ 
         	
         	/*************************************************/
         	/****drawBorderLine Between chromsomes starts*****/
@@ -1015,7 +1096,8 @@ public class LROHsFromWESData extends JPanel {
         	
         }//End of FOR
         
-        showCandidateVariants(g,
+        showCandidateVariants(
+        		g,
         		candidateLocis,
         		width,
         		enlargeFactor,
@@ -1236,18 +1318,67 @@ public class LROHsFromWESData extends JPanel {
     	
     	
     }
+    
+    public static List<String> readColumnNamesFromHeaderLine(String inputFileName){
+    	
+    	FileReader fileReader = null;
+    	BufferedReader bufferedReader = null;
+    	
+    	String strLine = null;
+    	int indexofTab;
+    	int indexofPreviousTab =-1;
+    	
+    	String columnName;
+    	List<String> columnNames = new ArrayList<String>();
+    	
+		try {
+			fileReader = new FileReader(inputFileName);
+			bufferedReader = new  BufferedReader(fileReader);
+			
+			if((strLine = bufferedReader.readLine())!=null){
+				
+				indexofTab = strLine.indexOf('\t',indexofPreviousTab+1);
+				
+				while(indexofTab>0){
+					columnName = strLine.substring(indexofPreviousTab+1, indexofTab);
+					columnNames.add(columnName);
+					
+					indexofPreviousTab = indexofTab;
+					indexofTab = strLine.indexOf('\t',indexofPreviousTab+1);
+
+				}//End of while
+				
+				//For the last one
+				if (indexofPreviousTab>0){
+					columnName = strLine.substring(indexofPreviousTab+1);
+					columnNames.add(columnName);
+					
+				}
+				
+			}//Read First header line
+			
+			//Close
+			bufferedReader.close();
+			
+			
+	    	
+		} catch (FileNotFoundException e) {			
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	
+		return columnNames;
+    }
         
 	public static void main(String[] args) {
 		
-		//Read WES Data containing Case and Controls
-		//Input
-		String sortedWESDataInputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Sorted_LGMD-FamB-WES-All_chr_result.tep.txt";
+		//TODO Simplify the code
+		//TODO make GUI parametric
 		
-		//Output
-		String case_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_FROM_WES.txt";
-		String case_AfterOverlapsRemoved_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_AfterOverlappingControlLROHsRemoved.txt";
-		String control_mother_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Control_mother_LROHs_FROM_WES.txt";
-		String control_father_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Control_father_LROHs_FROM_WES.txt";
+		//Input File: Read WES Data containing Case and Controls
+		//It has to be sorted w.r.t. chromoseme and start end points in ascending order
+		//String sortedWESDataInputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Sorted_LGMD-FamB-WES-All_chr_result.tep.txt";
 		
 		//Output Augmented with Variants
 		String case_AfterOverlapsRemoved_AugmentedWithVariants_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_AfterOverlappingControlLROHsRemoved_AugmentedWithVariants.txt";
@@ -1256,37 +1387,7 @@ public class LROHsFromWESData extends JPanel {
 		//Do not augment with control Hom snps
 		String case_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants_outputFileName = "C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\LROHs\\Case_LROHs_AfterOverlappingControlLROHsRemoved_AugmentedWithNotCommonandSynonmousVariants.txt";
 	
-		int numberofConsecutiveHomVariantsRequired = 10;
-		float selectionCriteriaForRareVariant = 0.01f;
-
-		//Find Long Runs of homozygosity (LROH) with at least --numberofConsecutiveHomVariantsRequired-- consecutive homozygot variants
-		findLROHs(
-				caseBefore_chromosomeName2IntervalTreeMap,
-				caseAfter_chromosomeName2IntervalTreeMap,				
-				numberofConsecutiveHomVariantsRequired,
-				sortedWESDataInputFileName,
-				case_outputFileName,
-				case_AfterOverlapsRemoved_outputFileName,
-				control_mother_outputFileName,
-				control_father_outputFileName);
-		
-	
-		augmentWithVariants(
-				caseAfter_chromosomeName2IntervalTreeMap,
-				sortedWESDataInputFileName,
-				case_AfterOverlapsRemoved_AugmentedWithVariants_outputFileName,
-				case_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants_outputFileName,
-				selectionCriteriaForRareVariant);
-		
-		
-		
-		//GUI starts
-		LROHsFromWESData mainPanel = new LROHsFromWESData();
-		//TODO 7000 must be parametric
-		mainPanel.setPreferredSize(new Dimension(7000, 1000));
-		mainPanel.setLayout(new BorderLayout());
-		
-		
+		//GUI starts		
 		GridBagConstraints constraints = new GridBagConstraints();
         constraints.anchor = GridBagConstraints.PAGE_START;
         constraints.insets = new Insets(5, 5, 5, 5);
@@ -1295,27 +1396,71 @@ public class LROHsFromWESData extends JPanel {
 		JPanel userPanel = new JPanel();
 		userPanel.setLayout(new GridBagLayout());
 		//userPanel.setPreferredSize(new Dimension(7000,100));
-		userPanel.setMaximumSize(new Dimension(7000,100));
+		userPanel.setMaximumSize(new Dimension(7000,200));
 		//userPanel.setMinimumSize(new Dimension(7000,100));
 		
+		JPanel casePanel =  new JPanel();
+		casePanel.setLayout(new GridBagLayout());
+	
+		JPanel controlPanel =  new JPanel();
+		controlPanel.setLayout(new GridBagLayout());
 
-		         
+
         /******************************************/
         /**********Input File Panel starts*********/
         /******************************************/
 		JPanel inputFilePanel = new JPanel();
 		inputFilePanel.setLayout(new GridBagLayout());
 
-		JButton browseButton = new JButton("Browse");
-		browseButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-            	//TODO
-            	//Do Something
-            }
-        });
+		String[] options = {};
+		caseColumn = new JComboBox<String>(options);
+		controlList = new JList<String>(options);
+
 		
 		JTextField inputFileTextField = new JTextField(30);
+		
+		JButton browseButton = new JButton("Browse");
+		browseButton.addActionListener(new ActionListener() {
+            
+			@Override
+            public void actionPerformed(ActionEvent e) {
+            	
+            	JFileChooser fc = new JFileChooser();
+            	int returnVal;
+
+            	fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            	
+            	returnVal = fc.showOpenDialog(userPanel);
+            	if( returnVal == JFileChooser.APPROVE_OPTION){
+            		
+            		File file = fc.getSelectedFile();
+            		inputFileTextField.setText(file.getPath() + System.getProperty( "file.separator"));
+            		
+            		//TODO sort coordinates based on start position in ascending order chromosome based
+                	List<String> columns = readColumnNamesFromHeaderLine(inputFileTextField.getText());
+            		
+            		
+            		//Populate case columns
+                	caseColumn.removeAllItems();
+            		for(int i=0;i<columns.size();i++){
+            			caseColumn.addItem(columns.get(i));                		
+            		}
+            		
+                  	//Populate control columns
+            		controlList.removeAll();
+            		DefaultListModel<String> model = new DefaultListModel<String>();
+            		//Autoscroll did not work as I expected.
+            		controlList.setAutoscrolls(true);
+            		controlList.setBorder(new LineBorder(Color.BLACK));
+            		for(int i=0;i<columns.size();i++){
+            			model.addElement(columns.get(i));            			
+            		}
+            		controlList.setModel(model);
+					
+            	}
+
+            }
+        });
 
 		constraints.gridx = 0;
         constraints.gridy = 0;     
@@ -1370,43 +1515,39 @@ public class LROHsFromWESData extends JPanel {
         /******************************************/
         /****Case and control Panel starts*********/
         /******************************************/
-		JPanel caseControlPanel =  new JPanel();
-		caseControlPanel.setLayout(new GridBagLayout());
-		
-		String[] options = { "Option1", "Option2", "Option3", "Option4", "Option15" };
 		JLabel caseColumnLabel = new JLabel("Select Case Column:");
-		JComboBox<String> caseColumn = new JComboBox<String>(options);
+		JLabel controlColumnLabel = new JLabel("Select Control Column/s:");
+
 		caseColumn.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Do something when you select a value
-
             }
         });
 
-		JLabel controlColumnLabel = new JLabel("Select Control Column/s:");
-		JList<String> controlList = new JList<String>(options);
-
-				
+			
 		constraints.gridx = 0;
 	    constraints.gridy = 0; 
-		caseControlPanel.add(caseColumnLabel,constraints);
+		casePanel.add(caseColumnLabel,constraints);
 		
 		constraints.gridx = 1;
 	    constraints.gridy = 0; 
-		caseControlPanel.add(caseColumn,constraints);
+		casePanel.add(caseColumn,constraints);
 		
 		constraints.gridx = 0;
-	    constraints.gridy = 1; 
-		caseControlPanel.add(controlColumnLabel,constraints);
+	    constraints.gridy = 0; 
+		controlPanel.add(controlColumnLabel,constraints);
 		
 		constraints.gridx = 1;
-	    constraints.gridy = 1; 
-		caseControlPanel.add(controlList,constraints);
+	    constraints.gridy = 0; 
+		controlPanel.add(controlList,constraints);
 		
-		// set border for the panel
-		caseControlPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Select Case Column and Control Column/s"));
+		//Set border for the panel
+		casePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Select Case Column"));
+		
+		//Set border for the panel
+		controlPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Select Control Column/s"));
         /******************************************/
         /****Case and control Panel ends***********/
         /******************************************/
@@ -1418,12 +1559,86 @@ public class LROHsFromWESData extends JPanel {
 		runPanel.setLayout(new GridBagLayout());
 		
 		// Button submit
-        JButton runButton = new JButton("Show LROHs...");
+        JButton runButton = new JButton("Show Candidate Variants...");
         runButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                findLROHS((String) caseColumn.getSelectedItem(), controlList.getSelectedIndices(),inputFileTextField.getText(),numberOfConsecutiveHomVariantsRequired.getText(),rareVariantThreshold.getText());
-            }
+            	
+            	int numberofConsecutiveHomVariantsRequired = Integer.parseInt(numberOfConsecutiveHomVariantsRequired.getText());
+            	float selectionCriteriaForRareVariant = Float.parseFloat(rareVariantThreshold.getText());
+            	
+            	String inputFilename = inputFileTextField.getText();
+            	String outputDirectory = null;
+            			
+            	//TODO Minor user can provide output Folder
+            	//Right now we get it from inputfile path
+            	File file = new File(inputFilename);
+            	if (file.isFile()){
+            		outputDirectory = file.getParent();              
+            	}
+            	
+            	String caseColumnName = (String) caseColumn.getSelectedItem();
+            	
+            	int[] controlColumnIndicies = controlList.getSelectedIndices();
+            	String controlColumnName = null;
+            	List<String> controlColumnNames = new ArrayList<String>();
+            	            	
+            	for (int i = 0; i < controlColumnIndicies.length; i++) {
+            		controlColumnName = controlList.getModel().getElementAt(controlColumnIndicies[i]);
+            		controlColumnNames.add(controlColumnName);
+            	 }
+            	
+            	
+            	//TODO call the methods below if variables are set correctly            	
+            	//This program is more useful in case of control data is provided
+            	//On the other hand, it can still information only case data is provided.
+            	//Case data is mandatory
+            	if(caseColumnName!=null && !caseColumnName.isEmpty() && controlColumnNames!=null){
+   
+            		//Find Long Runs of homozygosity (LROH) with at least --numberofConsecutiveHomVariantsRequired-- consecutive homozygot variants
+            		findLROHs(
+            				caseBefore_chromosomeName2IntervalTreeMap,
+            				caseAfter_chromosomeName2IntervalTreeMap,				
+            				inputFilename,
+            				caseColumnName,
+            				controlColumnNames,
+            				numberofConsecutiveHomVariantsRequired,
+            				outputDirectory);
+            		
+            		//TODO Can we do this part using VCF file?
+            		//TODO has to be parametric too.
+            		augmentWithVariants(
+            				caseAfter_chromosomeName2IntervalTreeMap,
+            				inputFilename,
+            				case_AfterOverlapsRemoved_AugmentedWithVariants_outputFileName,
+            				case_AfterOverlapsRemoved_AugmentedWithNotCommonandSynonmousVariants_outputFileName,
+            				selectionCriteriaForRareVariant);
+
+            	}//End of if user provided variables are entered properly 
+            	
+          		
+        		CandidateVariantIdentificationFromWES mainPanel = new CandidateVariantIdentificationFromWES();
+        		//TODO 7000 must be parametric
+        		//decide on number of case and controls and calculate the real value instead of 7000
+        		mainPanel.setPreferredSize(new Dimension(7000, 1000));
+        		mainPanel.setLayout(new BorderLayout());
+        		
+        	    JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);  //Let all scrollPanel has scroll bars
+        	    //TODO make it parametric
+        	    scrollPane.setPreferredSize(new Dimension(1000, 900));
+
+        	    JFrame frame2 = new JFrame("Show Candidate Variants by discarding common LROHs between case and controls from WES");
+        		frame2.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        		
+        		frame2.add(scrollPane);
+        		//TODO make it parametric
+        	    frame2.setSize(1000, 900);
+        		
+        		frame2.pack();
+        		frame2.setLocationRelativeTo(null);
+        		frame2.setVisible(true); 
+
+             }
         });
         
 		constraints.gridx = 0;
@@ -1441,31 +1656,33 @@ public class LROHsFromWESData extends JPanel {
         constraints.gridy = 0; 
 		userPanel.add(inputFilePanel, constraints);
 		
-		constraints.gridx = 1;
-        constraints.gridy = 0; 
+		constraints.gridx = 0;
+        constraints.gridy = 1; 
 		userPanel.add(thresholdPanel, constraints);
 		
-		constraints.gridx = 2;
+		constraints.gridx = 1;
         constraints.gridy = 0; 
-       userPanel.add(caseControlPanel, constraints);
+        constraints.gridheight  =1;
+        userPanel.add(casePanel, constraints);
         
-        constraints.gridx = 1;
+		constraints.gridx = 1;
         constraints.gridy = 1; 
+        constraints.gridheight  =1;
+        userPanel.add(controlPanel, constraints);
+ 
+        
+        constraints.gridx = 0;
+        constraints.gridy = 2; 
+        constraints.gridwidth = 2;
 		userPanel.add(runPanel, constraints);
 		
 		// set border for the panel
 		userPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "User Panel"));
-	
 	    /******************************************/
         /******Add Panels toUser Panel ends********/
         /******************************************/
-        
-		
-	    JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);  //Let all scrollPanel has scroll bars
-	    scrollPane.setPreferredSize(new Dimension(1000, 900));
-		
-	  
-	    JFrame frame = new JFrame("LROHs from WES");
+       
+	    JFrame frame = new JFrame("Candidate Variant Identification by discarding common LROHs between case and controls from WES");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		//I have added two panels two my frame.
@@ -1485,21 +1702,21 @@ public class LROHsFromWESData extends JPanel {
 		
 		constraints.gridx = 0;
         constraints.gridy = 0;     
+        constraints.weighty=1;
        frame.add(userPanel,constraints);		
 		
        constraints.gridx = 0;
        constraints.gridy = 1;
        constraints.gridheight=4;
+       constraints.weighty=10;
        constraints.fill= GridBagConstraints.VERTICAL;     
-       frame.add(scrollPane,constraints);
+       //frame.add(scrollPane,constraints);
        //frame.setSize(1000, 900);
 		
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true); 
-		//GUI ends
-		
-		
+		//GUI ends	
 		
 	}
 

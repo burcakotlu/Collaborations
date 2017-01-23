@@ -1,4 +1,4 @@
-package hacettepe.lgmd.lrohs;
+package candidateVariantIdentification;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;

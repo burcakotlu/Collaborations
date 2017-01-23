@@ -5,8 +5,6 @@ package hacettepe.lgmd.commonTFs;
 
 import java.util.Comparator;
 
-import auxiliary.FunctionalElementMinimal;
-
 /**
  * @author Burçak Otlu
  * @date Jan 8, 2017

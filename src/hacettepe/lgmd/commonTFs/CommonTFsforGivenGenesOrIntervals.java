@@ -13,8 +13,10 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.rpc.ServiceException;
 
@@ -179,29 +181,26 @@ public class CommonTFsforGivenGenesOrIntervals {
 		
 		//First way
 		Map<String,List<RSATResult>>  intervalName2RSATResultListMap = new HashMap<String,List<RSATResult>>();
-		
-		//Second way
 		Map<String,List<RSATResult>>  tfName2RSATResultListMap = new HashMap<String,List<RSATResult>>();
 		List<RSATResult> rsatResultList = null;
-		
-		
-		List<TFBasedResult> TFBasedResultList = new ArrayList<TFBasedResult>();
-		TFBasedResult tfBasedResult = null;
-			
-		Double avgPValue = 0d;
-		Double smallestPValue = 0d;
-		Double accumulatedLogRatio = 0d;
-		//List<Double> logRatioList = new ArrayList<Double>();
-		
+		List<RSATResult> tfBased_RSATResultList = null;
+		RSATResult rsatResult = null;
+
+//		//Second way
+//						
+//		List<TFBasedResult> TFBasedResultList = new ArrayList<TFBasedResult>();
+//		TFBasedResult tfBasedResult = null;
+//			
+//		Double avgPValue = 0d;
+//		Double smallestPValue = 0d;
+//		Double accumulatedLogRatio = 0d;		
 		
 		String intervalName = null;
 		Interval interval = null;
 		
 		String tfName = null;
 		String tfPFM = null;
-		
-		RSATResult rsatResult = null;
-		
+				
 		ChromosomeName chromosomeName = null;
 		String chrName = null;
 		String fastaFile = null;
@@ -212,8 +211,8 @@ public class CommonTFsforGivenGenesOrIntervals {
 		FileWriter fileWriter = null;
 		BufferedWriter bufferedWriter = null;
 
-		FileWriter fileWriter2 = null;
-		BufferedWriter bufferedWriter2 = null;
+//		FileWriter fileWriter2 = null;
+//		BufferedWriter bufferedWriter2 = null;
 
 		String RSATMatrixScanResult = null;
 			
@@ -222,8 +221,8 @@ public class CommonTFsforGivenGenesOrIntervals {
 			fileWriter = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\RSATResults.txt");
 			bufferedWriter = new BufferedWriter( fileWriter);
 	
-			fileWriter2 = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\RSATResults_sorted_wrt_avg_pvalue.txt");
-			bufferedWriter2 = new BufferedWriter(fileWriter2);
+//			fileWriter2 = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\RSATResults_sorted_wrt_avg_pvalue.txt");
+//			bufferedWriter2 = new BufferedWriter(fileWriter2);
 	
 		
 			/***************************************************************************************/
@@ -309,87 +308,27 @@ public class CommonTFsforGivenGenesOrIntervals {
 			/**************************************************************************************************************************/
 		
 			
-			//The Second Way
-			//Call RSAT
-			//For each TF
-			//And then for each interval
-			for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
-				
-				tfName = tfEntry.getKey();
-				tfPFM = tfEntry.getValue();
-				
-				for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
-					intervalName = intervalEntry.getKey();
-					interval = intervalEntry.getValue();
-					
-					chromosomeName = interval.getChromosomeName();
-					chrName = chromosomeName.convertEnumtoString();
-					
-					fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
-							chrName.substring(3),
-							interval.getLow(),
-							interval.getHigh(),
-							chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
-					
-					rsatResult = new RSATResult();
-					
-					rsatResult.setIntervalName(intervalName);
-					rsatResult.setTfName(tfName);
-					
-					RSATMatrixScanResult = matrixScan( 
-							fastaFile, 
-							tfPFM,  
-							matrixScanRequest, 
-							proxy);
-					
-					if( RSATMatrixScanResult != null){
-						
-						fillUsingTheFirstResult(rsatResult,RSATMatrixScanResult);
-						
-						rsatResultList = tfName2RSATResultListMap.get(tfName);
-						
-						if (rsatResultList==null){
-							rsatResultList = new ArrayList<RSATResult>();
-							rsatResultList.add(rsatResult);
-							tfName2RSATResultListMap.put(tfName, rsatResultList);
-						}else{
-							rsatResultList.add(rsatResult);
-						}
-					}//End of IF RSATResult is not null
-					
-					
-				}//End of for each interval
-				
-			}//End of for each Encode TF
-				
-			
-//			//First way
-//			for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
-//				intervalName = intervalEntry.getKey();
-//				interval = intervalEntry.getValue();
+//			//The Second Way
+//			//Call RSAT
+//			//For each TF
+//			//And then for each interval
+//			for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
 //				
-//				chromosomeName = interval.getChromosomeName();
-//				chrName = chromosomeName.convertEnumtoString();
+//				tfName = tfEntry.getKey();
+//				tfPFM = tfEntry.getValue();
 //				
-//				
-//				//TODO
-//				//Think about it.
-//				//Can we declare strand for genes on negative strand? Yes for positive strand, we give strand=1
-//				//Most probably for negative strand, we give strand=2, check it.
-//				//get DNA Sequence
-//				//Check it: whether gene on - strand get the best matches with TFs on Reverse side
-//				//RSAT looks for both sides so getting DNA sequence on + or - strand does not matter.
-//				fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
-//						chrName.substring(3),
-//						interval.getLow(),
-//						interval.getHigh(),
-//						chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
-//	
-//				
-//				for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
+//				for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
+//					intervalName = intervalEntry.getKey();
+//					interval = intervalEntry.getValue();
 //					
-//					tfName = tfEntry.getKey();
-//					tfPFM = tfEntry.getValue();
+//					chromosomeName = interval.getChromosomeName();
+//					chrName = chromosomeName.convertEnumtoString();
+//					
+//					fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
+//							chrName.substring(3),
+//							interval.getLow(),
+//							interval.getHigh(),
+//							chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
 //					
 //					rsatResult = new RSATResult();
 //					
@@ -406,33 +345,105 @@ public class CommonTFsforGivenGenesOrIntervals {
 //						
 //						fillUsingTheFirstResult(rsatResult,RSATMatrixScanResult);
 //						
-//						rsatResultList = intervalName2RSATResultListMap.get(intervalName);
+//						rsatResultList = tfName2RSATResultListMap.get(tfName);
 //						
 //						if (rsatResultList==null){
 //							rsatResultList = new ArrayList<RSATResult>();
 //							rsatResultList.add(rsatResult);
-//							intervalName2RSATResultListMap.put(intervalName, rsatResultList);
+//							tfName2RSATResultListMap.put(tfName, rsatResultList);
 //						}else{
 //							rsatResultList.add(rsatResult);
 //						}
-//					}
-//	
+//					}//End of IF RSATResult is not null
 //					
-//				}//End of FOR each TF PFM
-//								
-//			}//End of FOR each interval
+//					
+//				}//End of for each interval
+//				
+//			}//End of for each Encode TF
+				
 			
+			//First way
+			for(Map.Entry<String, Interval> intervalEntry:intervalName2IntervalMap.entrySet()){
+				
+				intervalName = intervalEntry.getKey();
+				interval = intervalEntry.getValue();
+				
+				chromosomeName = interval.getChromosomeName();
+				chrName = chromosomeName.convertEnumtoString();				
+				
+				//TODO
+				//Think about it.
+				//Can we declare strand for genes on negative strand? Yes for positive strand, we give strand=1
+				//Most probably for negative strand, we give strand=2, check it.
+				//get DNA Sequence
+				//Check it: whether gene on - strand get the best matches with TFs on Reverse side
+				//RSAT looks for both strands so getting DNA sequence on + or - strand does not matter.
+				fastaFile = GenerationofSequencesandMatricesforSNPs.getDNASequence(
+						chrName.substring(3),
+						interval.getLow(),
+						interval.getHigh(),
+						chrName2RefSeqIdforLatestAssemblyReturnedByNCBIEutilsMap);
+	
+				
+				for(Map.Entry<String, String> tfEntry : ENCODE_TFName2PFMMap.entrySet()){
+					
+					tfName = tfEntry.getKey();
+					tfPFM = tfEntry.getValue();
+					
+					rsatResult = new RSATResult();
+					
+					rsatResult.setIntervalName(intervalName);
+					rsatResult.setTfName(tfName);
+					
+					RSATMatrixScanResult = matrixScan( 
+							fastaFile, 
+							tfPFM,  
+							matrixScanRequest, 
+							proxy);
+					
+					if( RSATMatrixScanResult != null){
+						
+						fillUsingTheFirstResult(rsatResult,RSATMatrixScanResult);
+						
+						rsatResultList = intervalName2RSATResultListMap.get(intervalName);
+						
+						if (rsatResultList==null){
+							rsatResultList = new ArrayList<RSATResult>();
+							rsatResultList.add(rsatResult);
+							intervalName2RSATResultListMap.put(intervalName, rsatResultList);
+						}else{
+							rsatResultList.add(rsatResult);
+						}
+						
+						//Fill other map
+						tfBased_RSATResultList = tfName2RSATResultListMap.get(tfName);
+						if (tfBased_RSATResultList==null){
+							tfBased_RSATResultList = new ArrayList<RSATResult>();
+							tfBased_RSATResultList.add(rsatResult);
+							tfName2RSATResultListMap.put(tfName, tfBased_RSATResultList);
+						}else{
+							tfBased_RSATResultList.add(rsatResult);
+						}
+						
+					}
+						
+				}//End of FOR each TF PFM
+								
+			}//End of FOR each interval
+			
+			/***********************************************************************/
+			/***********************Output for first way starts*********************/
+			/***********************************************************************/
 			//Now sort the results with ascending p-Value
-			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+			for (Map.Entry<String, List<RSATResult>> entry: intervalName2RSATResultListMap.entrySet()){
 				rsatResultList = entry.getValue();
 				Collections.sort(rsatResultList, RSATResult.P_VALUE);
 			}
 			
-			
 			//Write header line
 			bufferedWriter.write(
-					"TfName"+ "\t" + 
 					"IntervalName"+ "\t" + 
+					"TfName"+ "\t" + 					
 					"MatrixName" + "\t" + 
 					"MatrixNumber"+ "\t" + 
 					"Direction"+ "\t" + 
@@ -441,25 +452,18 @@ public class CommonTFsforGivenGenesOrIntervals {
 					"pValue"+ "\t" +
 					System.getProperty("line.separator"));
 			
+			
 			//Now write the results with ascending p-Value
-			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+			for (Map.Entry<String, List<RSATResult>> entry: intervalName2RSATResultListMap.entrySet()){
 				
-				tfName = entry.getKey();
+				intervalName = entry.getKey();
 				rsatResultList = entry.getValue();
 				
-				avgPValue = 0d;
-				accumulatedLogRatio = 0d;
-				
 				for(int i=0;i<rsatResultList.size();i++){		
-					if (i==0){
-						smallestPValue = rsatResultList.get(i).getpValue();
-					}else{
-						accumulatedLogRatio += Math.log(smallestPValue/rsatResultList.get(i).getpValue());
-					}
-					
+										
 					bufferedWriter.write(
-							rsatResultList.get(i).getTfName()+ "\t" + 
 							rsatResultList.get(i).getIntervalName()+ "\t" + 
+							rsatResultList.get(i).getTfName()+ "\t" + 
 							rsatResultList.get(i).getMatrixName()+ "\t" + 
 							rsatResultList.get(i).getMatrixNumber()+ "\t" + 
 							rsatResultList.get(i).getDirection()+ "\t" + 
@@ -467,39 +471,102 @@ public class CommonTFsforGivenGenesOrIntervals {
 							rsatResultList.get(i).getEnd()+ "\t" + 
 							rsatResultList.get(i).getpValue()+ "\t" +
 							System.getProperty("line.separator"));
-					
-					avgPValue += rsatResultList.get(i).getpValue();
-					
-				}//End of for each RSATResult
+										
+				}//End of for each RSATResult												
 				
-				avgPValue = avgPValue/rsatResultList.size();
-				
-				tfBasedResult = new TFBasedResult(tfName,avgPValue, accumulatedLogRatio);
-				TFBasedResultList.add(tfBasedResult);
-				
-			}//End of for each RSATResultlist
+			}//End of for each RSATResultlist			
+			/***********************************************************************/
+			/***********************Output for first way ends***********************/
+			/***********************************************************************/
 			
-			//Sort TFBasedResultList w.r.t. avgPValue in ascending order
-			Collections.sort(TFBasedResultList, TFBasedResult.AVG_P_VALUE);
+			findTheCommonTFs(intervalName2RSATResultListMap,tfName2RSATResultListMap);
+
 			
-			
-			//Write header
-			bufferedWriter2.write("TfName" + "\t" +
-					"AvgPValue" + "\t" +
-					"AccumulatedLogRatio" + "\t" +
-					System.getProperty("line.separator"));
-			for(int i=0;i<TFBasedResultList.size();i++){
-				tfBasedResult = TFBasedResultList.get(i);
-				bufferedWriter2.write(tfBasedResult.getTfName() + "\t" +
-						tfBasedResult.getAvgPValue() + "\t" +
-						tfBasedResult.getAccumulatedLogRatio() + "\t" +
-						System.getProperty("line.separator"));
-			}
-			
+//			/***********************************************************************/
+//			/***********************Output for second way starts********************/
+//			/***********************************************************************/
+//			//Now sort the results with ascending p-Value
+//			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+//				rsatResultList = entry.getValue();
+//				Collections.sort(rsatResultList, RSATResult.P_VALUE);
+//			}
+//			
+//			
+//			
+//			//Write header line
+//			bufferedWriter.write(
+//					"TfName"+ "\t" + 
+//					"IntervalName"+ "\t" + 
+//					"MatrixName" + "\t" + 
+//					"MatrixNumber"+ "\t" + 
+//					"Direction"+ "\t" + 
+//					"Start"+ "\t" + 
+//					"End"+ "\t" + 
+//					"pValue"+ "\t" +
+//					System.getProperty("line.separator"));
+//			
+//			//Now write the results with ascending p-Value
+//			for (Map.Entry<String, List<RSATResult>> entry: tfName2RSATResultListMap.entrySet()){
+//				
+//				tfName = entry.getKey();
+//				rsatResultList = entry.getValue();
+//				
+//				avgPValue = 0d;
+//				accumulatedLogRatio = 0d;
+//				
+//				for(int i=0;i<rsatResultList.size();i++){		
+//					if (i==0){
+//						smallestPValue = rsatResultList.get(i).getpValue();
+//					}else{
+//						accumulatedLogRatio += Math.log(smallestPValue/rsatResultList.get(i).getpValue());
+//					}
+//					
+//					bufferedWriter.write(
+//							rsatResultList.get(i).getTfName()+ "\t" + 
+//							rsatResultList.get(i).getIntervalName()+ "\t" + 
+//							rsatResultList.get(i).getMatrixName()+ "\t" + 
+//							rsatResultList.get(i).getMatrixNumber()+ "\t" + 
+//							rsatResultList.get(i).getDirection()+ "\t" + 
+//							rsatResultList.get(i).getStart()+ "\t" + 
+//							rsatResultList.get(i).getEnd()+ "\t" + 
+//							rsatResultList.get(i).getpValue()+ "\t" +
+//							System.getProperty("line.separator"));
+//					
+//					avgPValue += rsatResultList.get(i).getpValue();
+//					
+//				}//End of for each RSATResult
+//				
+//				avgPValue = avgPValue/rsatResultList.size();
+//				
+//				tfBasedResult = new TFBasedResult(tfName,avgPValue, accumulatedLogRatio);
+//				TFBasedResultList.add(tfBasedResult);
+//				
+//			}//End of for each RSATResultlist
+//			
+//			//Sort TFBasedResultList w.r.t. avgPValue in ascending order
+//			Collections.sort(TFBasedResultList, TFBasedResult.AVG_P_VALUE);
+//			
+//			
+//			//Write header
+//			bufferedWriter2.write("TfName" + "\t" +
+//					"AvgPValue" + "\t" +
+//					"AccumulatedLogRatio" + "\t" +
+//					System.getProperty("line.separator"));
+//			for(int i=0;i<TFBasedResultList.size();i++){
+//				tfBasedResult = TFBasedResultList.get(i);
+//				bufferedWriter2.write(tfBasedResult.getTfName() + "\t" +
+//						tfBasedResult.getAvgPValue() + "\t" +
+//						tfBasedResult.getAccumulatedLogRatio() + "\t" +
+//						System.getProperty("line.separator"));
+//			}
+//			/***********************************************************************/
+//			/***********************Output for second way ends**********************/
+//			/***********************************************************************/
+
 			
 			//Close bufferedWriter
 			bufferedWriter.close();
-			bufferedWriter2.close();
+//			bufferedWriter2.close();
 		
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -510,6 +577,111 @@ public class CommonTFsforGivenGenesOrIntervals {
 	}
 
 	
+	
+	public  static void findTheCommonTFs(
+			Map<String,List<RSATResult>> intervalName2RSATResultListMap,
+			Map<String,List<RSATResult>> tfName2RSATResultListMap){
+		
+		FileWriter fileWriter = null;
+		BufferedWriter bufferedWriter = null;
+		
+		String intervalName = null;
+		List<RSATResult> RSATResultList = null;
+		
+		RSATResult rsatResult = null;
+		double threshold = 0.0001d;
+		
+		Set<String> intersection = null;
+				
+		try {
+			fileWriter = FileOperations.createFileWriter("C:\\Users\\Burçak\\Google Drive\\Collaborations\\HacettepeUniversity\\LGMD\\CommonTFs\\CommonTFs.txt");
+			bufferedWriter = new BufferedWriter( fileWriter);
+
+			Map<String,Set<String>> intervalName2TFSetMap = new HashMap<String,Set<String>>();
+			Set<String> tfSet = null;
+			
+			//Initialize intervalName2TFSetMap
+			for(Map.Entry<String,List<RSATResult>> entry:intervalName2RSATResultListMap.entrySet()){
+				intervalName = entry.getKey();
+				intervalName2TFSetMap.put(intervalName, new HashSet<String>());
+			}
+			
+			for(Map.Entry<String,List<RSATResult>> entry:intervalName2RSATResultListMap.entrySet()){
+				
+				intervalName = entry.getKey();
+				RSATResultList = entry.getValue();
+				
+				for(int i=0; i<RSATResultList.size();i++){
+					
+					rsatResult = RSATResultList.get(i);
+					
+					//Fill intervalName2TFSetMap				
+					if (rsatResult.getpValue()<threshold){
+						
+						tfSet = intervalName2TFSetMap.get(intervalName);
+						
+						if (tfSet==null){
+							
+							tfSet = new HashSet<String>();
+							tfSet.add(rsatResult.getTfName());
+							
+							intervalName2TFSetMap.put(intervalName, tfSet);
+							
+						}else{
+							tfSet.add(rsatResult.getTfName());						
+						}
+						
+						
+					}//End of IF
+					
+				}//End of for TF RSATResult
+				
+			}//End of for each intervalName
+			
+			
+			//Initialize intersection with any tfSet
+			for(Map.Entry<String, Set<String>>  entry: intervalName2TFSetMap.entrySet()) {
+				tfSet = entry.getValue();
+				intersection = new HashSet<String>(tfSet);
+				break;			
+			}//End of for
+			
+			//Find common TFs in sets
+			for(Map.Entry<String, Set<String>>  entry: intervalName2TFSetMap.entrySet()) {
+				tfSet = entry.getValue();
+				intersection.retainAll(tfSet);
+			
+			}//End of for
+			
+			for(String commonTF: intersection) {
+				bufferedWriter.write(commonTF + System.getProperty("line.separator") );	
+				RSATResultList =  tfName2RSATResultListMap.get(commonTF);
+				for(int i=0; i<RSATResultList.size();i++){
+					bufferedWriter.write(
+							RSATResultList.get(i).getIntervalName()+ "\t" + 
+							RSATResultList.get(i).getTfName()+ "\t" + 
+							RSATResultList.get(i).getMatrixName()+ "\t" + 
+							RSATResultList.get(i).getMatrixNumber()+ "\t" + 
+							RSATResultList.get(i).getDirection()+ "\t" + 
+							RSATResultList.get(i).getStart()+ "\t" + 
+							RSATResultList.get(i).getEnd()+ "\t" + 
+							RSATResultList.get(i).getpValue()+ "\t" +
+							System.getProperty("line.separator"));
+				}
+				
+			}
+			
+			//Close
+			bufferedWriter.close();
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		
+	}
+
 	public static void fillENCODETFName2PFMMap(
 			List<String> ENCODE_TFs_List,
 			Map<String, String> tfName2TFPFMMap,
@@ -755,7 +927,7 @@ public class CommonTFsforGivenGenesOrIntervals {
 		List<String> ENCODE_TFs_List = new ArrayList<String>();
 		getENCODETFs(ENCODE_TFs_List);
 		
-		//for testing purposes
+//		//for testing purposes
 //		List<String> small_ENCODE_TFs_List = new ArrayList<String>();
 //		for(int i=0; i<5;i++){
 //			small_ENCODE_TFs_List.add(ENCODE_TFs_List.get(i));

@@ -1,4 +1,4 @@
-package hacettepe.lgmd.lrohs;
+package candidateVariantIdentification;
 
 
 

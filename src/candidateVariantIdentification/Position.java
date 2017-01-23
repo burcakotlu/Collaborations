@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hacettepe.lgmd.lrohs;
+package candidateVariantIdentification;
 
 /**
  * @author Burçak Otlu
